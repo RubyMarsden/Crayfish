@@ -41,13 +41,13 @@ class Spot:
 		for mp in self.massPeaks.values():
 			mp.calculateMeanAndStDevForRows(inputKey,outputKey)
 
+	def calculateCpsMeanAndStDevForRows(self, inputKey, outputKey):
+		for mp in self.massPeaks.values():
+			mp.calculateCpsMeanAndStDevForRows(inputKey, outputKey)
+
 	def calculateBackgroundSubtractionSBMForRows(self):
 		for mp in self.massPeaks.values():
-			mp.calculateBackgroundSubtractionSBMForRows(self.sbmBackground)	
-
-	def calculateCpsMeanAndStDevForRows(self):
-		for mp in self.massPeaks.values():
-			mp.calculateCpsMeanAndStDevForRows()
+			mp.calculateBackgroundSubtractionSBMForRows(self.sbmBackground)
 
 	def normaliseToSBMForRows(self):
 		for mp in self.massPeaks.values():

@@ -16,7 +16,6 @@ class MassPeak:
 			self.rows.append(row)
 		self.data = {}
 
-
 	def __repr__(self):
 		return self.name
 
@@ -25,21 +24,21 @@ class MassPeak:
 		for row in self.rows:
 			row.calculateMeanAndStDev(inputKey,outputKey)
 
-	def calculateBackgroundSubtractionSBMForRows(self,sbmBackground):
+	def calculateCpsMeanAndStDevForRows(self, inputKey, outputKey):
 		for row in self.rows:
-			row.calculateBackgroundSubtractionSBM(sbmBackground)	
+			row.calculate_cps_mean_and_st_dev(self.countTime, inputKey, outputKey)
 
-	def calculateCpsMeanAndStDevForRows(self):
+	def calculateBackgroundSubtractionSBMForRows(self, sbmBackground):
 		for row in self.rows:
-			row.calculateCpsMeanAndStDev(self.countTime)
+			row.calculateBackgroundSubtractionSBM(sbmBackground)
 
 	def normaliseToSBMForRows(self):
 		for row in self.rows:
-			row.normaliseToSBM()
+			row.normalise_to_sbm()
 
 	def subtractBackground2ForRows(self,backgroundMassPeak):
 		for row, backgroundRow in zip(self.rows, backgroundMassPeak.rows):
-			row.subtractBackground2(backgroundRow)
+			row.subtract_background2(backgroundRow)
 
 	def subtractExponentialBackgroundForRows(self,background1MassPeak,background2MassPeak):
 		for row, background1Row, background2Row in zip(self.rows, background1MassPeak.rows, background2MassPeak.rows):

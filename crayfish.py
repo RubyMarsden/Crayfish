@@ -13,8 +13,8 @@ SAMPLE_PREFIX1 = "545"
 SAMPLE_PREFIX2 = "428"
 SAMPLE_PREFIX3 = "812"
 SAMPLE_PREFIX4 = "366"
-SAMPLE_PREFIX5 = "test"
-FILE_NAME = 'data/test.csv'
+SAMPLE_PREFIX5 = "566"
+FILE_NAME = 'data/rm_k6_19080820_b.csv'
 
 # loads in the CSV data and creates a list of spots out of them
 def loadSpots():
@@ -79,13 +79,13 @@ def processData(config):
 	spots = loadSpots()
 	for spot in spots:
 		spot.calculateMeanAndStDevForRows("counts", "counts")
-	
+		spot.calculateCpsMeanAndStDevForRows("counts", "cps")
+
 		if config.normaliseBySBM:
-			spot.calculateMeanAndStDevForRows("sbm", "sbm")	
+			spot.calculateMeanAndStDevForRows("sbm", "sbm")
+			spot.calculateCpsMeanAndStDevForRows("sbm", "sbm_cps")
 			spot.calculateBackgroundSubtractionSBMForRows()
 			spot.normaliseToSBMForRows()
-		else:
-			spot.calculateCpsMeanAndStDevForRows()
 
 		if config.expBackgroundCorrection:
 			spot.subtractExponentialBackgroundForRows()
@@ -102,7 +102,7 @@ print("Loading data from " + FILE_NAME)
 normaliseBySBM = input("Do you want to normalise by the SBM as a proxy for primary beam strength? Y/N (type and then enter).")
 backgroundCorrectionType = input("Which background correction is required for the 230 Th peak? 0 for no extra correction, 1 for exponential correction and 2 for linear correction and 3 for all corrections to compare.")
 
-config = Configuration(normaliseBySBM is "Y", backgroundCorrectionType is 1)
+config = Configuration(normaliseBySBM is "Y", backgroundCorrectionType is "1")
 spots = processData(config)
 
 # 	plotExponentialBackground(spot, onSameGraph=True)
@@ -120,9 +120,17 @@ sampleSpots = findSpotsByPrefix(spots,SAMPLE_PREFIX1) + findSpotsByPrefix(spots,
 #showPlot()
 
 #write data to csv file
-with open('crayfish_output.csv','w') as csvfile:
-	wr = csv.writer(csvfile, delimiter=' ')#, quotechar='|', quoting=csv.QUOTE_MINIMAL)
+with open('crayfish_output.csv','w', newline='') as csvfile:
+	wr = csv.writer(csvfile, delimiter=',')
 	for spot in sampleSpots:
-		wr.writerow([spot.name," ", calculateSpotAge(spot,WR_SS15_45), spot.data["UThActivityRatio"], spot.data["ThThActivityRatio"]])
-	#wr.writerow(["hello"])
+		wr.writerow([spot.name, calculateSpotAge(spot, WR_SS14_28), spot.data["UThActivityRatio"], spot.data["ThThActivityRatio"]])
+	csvfile.close()
+
+with open('crayfish_rows.csv', 'w', newline='') as csvfile:
+	wr = csv.writer(csvfile, delimiter=",")
+	wr.writerow(["Spot name", "Mass peak name", "Scan number", "cps", "cps error", "Mass peak value"])
+	for spot in spots:
+		for mpName in spot.massPeaks:
+			for row in spot.massPeaks[mpName].rows:
+				wr.writerow([spot.name,mpName,row.scan_number, row.data["cps"][0], row.data["cps"][1], row.massPeakValue])
 	csvfile.close()

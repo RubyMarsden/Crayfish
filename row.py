@@ -7,6 +7,7 @@ class Row:
 	def __init__(self,spotName,mpName,scanNumber,massPeakValue,countData,sbmData):
 		self.name = spotName + " " + mpName + " " + str(scanNumber)
 		self.mpName = mpName
+		self.scan_number = str(scanNumber)
 		#self.time = timeOfScan
 		self.massPeakValue = massPeakValue
 
@@ -22,26 +23,25 @@ class Row:
 
 	def calculateMeanAndStDev(self,inputKey,outputKey):
 		self.data[outputKey]= calculateOutlierResistantMeanAndStDev(self.rawRows[inputKey], NUMBER_OF_OUTLIERS_ALLOWED)
-		
-	def calculateBackgroundSubtractionSBM(self,sbmBackground):
-		sbmMean,sbmStDev = self.data["sbm"]
-		self.data["sbmBackgroundCorrected"] = (sbmMean - sbmBackground, sbmStDev)
 
-	def calculateCpsMeanAndStDev(self,countTime):
-		mean,stDev = self.data["counts"]
+	def calculate_cps_mean_and_st_dev(self, countTime, inputKey, outputKey):
+		mean, stDev = self.data[inputKey]
 		cpsMean = mean*MEASUREMENTS_PER_SCAN_PER_MASS_PEAK/countTime
 		cpsStDev = stDev*MEASUREMENTS_PER_SCAN_PER_MASS_PEAK/countTime
-		self.data["cps"] = cpsMean,cpsStDev
+		self.data[outputKey] = cpsMean, cpsStDev
 
-	def normaliseToSBM(self):
-		countsMean, countsStDev = self.data["counts"]
+	def calculateBackgroundSubtractionSBM(self,sbmBackground):
+		sbmMean,sbmStDev = self.data["sbm_cps"]
+		self.data["sbmBackgroundCorrected"] = (sbmMean - sbmBackground, sbmStDev)
+
+	def normalise_to_sbm(self):
+		countsMean, countsStDev = self.data["cps"]
 		sbmMean, sbmStDev = self.data["sbmBackgroundCorrected"]
 		mean = countsMean/sbmMean
 		stDev = mean*math.sqrt((calculateRelativeErrors(sbmMean,sbmStDev)**2)+(calculateRelativeErrors(countsMean,countsStDev)**2))
 		self.data["cps"] = mean,stDev
 
-
-	def subtractBackground2(self,background):
+	def subtract_background2(self, background):
 		if self.mpName not in NONBACKGROUND:
 			raise Exception("Calling background subtraction on a background peak")
 
