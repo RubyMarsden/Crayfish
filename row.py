@@ -51,6 +51,34 @@ class Row:
 		correctedStDev = math.sqrt((stDev**2) + (backgroundStDev**2))
 		self.data["cpsBackgroundCorrected"] = correctedMean,correctedStDev
 
+	def subtract_linear_background(self, background1, background2):
+		if self.mpName != "ThO246":
+			raise Exception("Calling linear background subtraction on a non-ThO246 mass peak")
+		x1 = background1.massPeakValue
+		y1,y1Error = background1.data["cps"]
+		x2 = background2.massPeakValue
+		y2,y2Error = background2.data["cps"]
+		xThO246 = self.massPeakValue
+		yThO246, yThO246Error = self.data["cps"]
+
+		isConstant = y2 >= y1
+		if isConstant:
+			yEstimatedBackground = y2
+			yEstimatedBackgroundError = y2Error
+		else:
+			gradient = (y2-y1)/(x2-x1)
+			c = y1 - gradient*x1
+			yEstimatedBackground = gradient*xThO246 + c
+			yEstimatedBackgroundError = math.sqrt((((x2-1)/(x2-x1))*y1Error)**2 + (((x1-1)/(x2-x1))*y2Error)**2)
+			print(y1, " ", y2, " ", yEstimatedBackground)
+			print(y1Error," ", y2Error, " ", yEstimatedBackgroundError)
+
+		correctedBackgroundExponentialThO246 = yThO246 - yEstimatedBackground
+		correctedBackgroundExponentialThO246Error = errors_in_quadrature([yEstimatedBackgroundError, yThO246Error])
+		print(correctedBackgroundExponentialThO246," ", correctedBackgroundExponentialThO246Error)
+
+		self.data["cpsBackgroundCorrected"] = correctedBackgroundExponentialThO246, correctedBackgroundExponentialThO246Error
+
 	def subtractExponentialBackground(self,background1,background2):
 		if self.mpName != "ThO246":
 			raise Exception("Calling exponential background subtraction on a non-ThO246 mass peak")
@@ -70,9 +98,11 @@ class Row:
 			#NOTE we shift the exponential curve to x1=0 to avoid "a" becoming too large
 			xThO246 = xThO246 - x1
 			a, b, yEstimatedBackground, yEstimatedBackgroundError = estimateExponential((0,y1),y1Error,(x2-x1,y2),y2Error,xThO246)
-
+			print(yEstimatedBackground, " ", yEstimatedBackgroundError)
 		correctedBackgroundExponentialThO246 = yThO246 - yEstimatedBackground
 		correctedBackgroundExponentialThO246Error = math.sqrt((yEstimatedBackgroundError**2)+(yThO246Error**2))
+		print(correctedBackgroundExponentialThO246," ", correctedBackgroundExponentialThO246Error)
+
 
 		self.data["cpsBackgroundCorrected"] = correctedBackgroundExponentialThO246,correctedBackgroundExponentialThO246Error
 		if isConstant:
