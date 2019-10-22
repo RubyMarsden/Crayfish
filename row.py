@@ -69,7 +69,7 @@ class Row:
 			gradient = (y2-y1)/(x2-x1)
 			c = y1 - gradient*x1
 			yEstimatedBackground = gradient*xThO246 + c
-			yEstimatedBackgroundError = math.sqrt((((x2-1)/(x2-x1))*y1Error)**2 + (((x1-1)/(x2-x1))*y2Error)**2)
+			yEstimatedBackgroundError = math.sqrt((((x2-xThO246)/(x2-x1))*y1Error)**2 + (((xThO246 - x1)/(x2-x1))*y2Error)**2)
 			print(y1, " ", y2, " ", yEstimatedBackground)
 			print(y1Error," ", y2Error, " ", yEstimatedBackgroundError)
 
