@@ -5,6 +5,8 @@ __pycache__/
 
 #Not my data
 data/
+crayfish_rows.csv
+crayfish_output.csv
 
 # C extensions
 *.so
