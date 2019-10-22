@@ -87,8 +87,9 @@ def processData(config):
 			spot.calculateBackgroundSubtractionSBMForRows()
 			spot.normaliseToSBMForRows()
 
-		if config.expBackgroundCorrection:
-			spot.subtractExponentialBackgroundForRows()
+		if config.linear_background_correction:
+			spot.subtract_linear_background_for_rows()
+			#spot.subtractExponentialBackgroundForRows()
 		else:
 			spot.subtractBackground2ForRows()			
 
@@ -100,7 +101,7 @@ print("Starting crayfish")
 print("Loading data from " + FILE_NAME)
 
 normaliseBySBM = input("Do you want to normalise by the SBM as a proxy for primary beam strength? Y/N (type and then enter).")
-backgroundCorrectionType = input("Which background correction is required for the 230 Th peak? 0 for no extra correction, 1 for exponential correction and 2 for linear correction and 3 for all corrections to compare.")
+backgroundCorrectionType = input("Which background correction is required for the 230 Th peak? 0 for no extra correction, 1 for linear correction and 2 for both corrections to compare.")
 
 config = Configuration(normaliseBySBM is "Y", backgroundCorrectionType is "1")
 spots = processData(config)
@@ -122,6 +123,7 @@ sampleSpots = findSpotsByPrefix(spots,SAMPLE_PREFIX1) + findSpotsByPrefix(spots,
 #write data to csv file
 with open('crayfish_output.csv','w', newline='') as csvfile:
 	wr = csv.writer(csvfile, delimiter=',')
+	wr.writerow(["Spot name", "Age", "Error", "Age SBM", "Error"])
 	for spot in sampleSpots:
 		wr.writerow([spot.name, calculateSpotAge(spot, WR_SS14_28), spot.data["UThActivityRatio"], spot.data["ThThActivityRatio"]])
 	csvfile.close()

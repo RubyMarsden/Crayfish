@@ -1,6 +1,6 @@
 from settings import NONBACKGROUND
 
 class Configuration:
-	def __init__(self,normaliseBySBM,expBackgroundCorrection):
+	def __init__(self, normaliseBySBM, linear_background_correction):
 		self.normaliseBySBM = normaliseBySBM
-		self.expBackgroundCorrection = expBackgroundCorrection
+		self.linear_background_correction = linear_background_correction
