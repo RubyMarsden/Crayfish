@@ -40,6 +40,10 @@ class MassPeak:
 		for row, backgroundRow in zip(self.rows, backgroundMassPeak.rows):
 			row.subtract_background2(backgroundRow)
 
+	def subtract_linear_background_for_rows(self,background1MassPeak,background2MassPeak):
+		for row, background1Row, background2Row in zip(self.rows, background1MassPeak.rows, background2MassPeak.rows):
+			row.subtract_linear_background(background1Row,background2Row)
+
 	def subtractExponentialBackgroundForRows(self,background1MassPeak,background2MassPeak):
 		for row, background1Row, background2Row in zip(self.rows, background1MassPeak.rows, background2MassPeak.rows):
 			row.subtractExponentialBackground(background1Row,background2Row)

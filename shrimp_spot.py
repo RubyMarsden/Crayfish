@@ -58,6 +58,13 @@ class Spot:
 			if mp.mpName in NONBACKGROUND:
 				mp.subtractBackground2ForRows(self.massPeaks[BACKGROUND2])
 
+	def subtract_linear_background_for_rows(self):
+		for mp in self.massPeaks.values():
+			if mp.mpName == "ThO246":
+				mp.subtract_linear_background_for_rows(self.massPeaks[BACKGROUND1],self.massPeaks[BACKGROUND2])
+			elif mp.mpName in NONBACKGROUND:
+				mp.subtractBackground2ForRows(self.massPeaks[BACKGROUND2])
+
 	def subtractExponentialBackgroundForRows(self):
 		for mp in self.massPeaks.values():
 			if mp.mpName == "ThO246":

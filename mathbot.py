@@ -37,6 +37,9 @@ def calculateRelativeErrors(value, absoluteError):
 	else:
 		return 0
 
+def errors_in_quadrature(errors):
+	return math.sqrt(sum([error**2 for error in errors]))
+
 def estimateExponential(point1,error1, point2,error2, x):
 	x1,y1 = point1
 	x2,y2 = point2
