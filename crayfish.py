@@ -56,13 +56,17 @@ def spotLinearRegression(spots,fitIntercept):
 
 def calculateSpotAge(spot,WR):
 	x1 = spot.data["UThActivityRatio"][0]
+	x1_error = spot.data["UThActivityRatio"][1]
 	y1 = spot.data["ThThActivityRatio"][0]
+	y1_error = spot.data["ThThActivityRatio"][1]
 	x2 = WR
 	y2 = WR
 	m = (y1-y2)/(x1-x2)
-	print(x1, x2, y1,y2,m)
+	error_m = math.sqrt((x1_error/x1)**2 + (y1_error/y1)**2)
 	age = ageFromGradient(m,TH230_DECAY_CONSTANT)
-	return age
+	age_error = error_m * age
+	print(x1_error," ", y1_error," ", error_m)
+	return age, age_error
 
 def format(v):
 	return round(v, DECIMAL_PLACES)
@@ -125,7 +129,7 @@ with open('crayfish_output.csv','w', newline='') as csvfile:
 	wr = csv.writer(csvfile, delimiter=',')
 	wr.writerow(["Spot name", "Age", "Error", "Age SBM", "Error"])
 	for spot in sampleSpots:
-		wr.writerow([spot.name, calculateSpotAge(spot, WR_SS14_28), spot.data["UThActivityRatio"], spot.data["ThThActivityRatio"]])
+		wr.writerow([spot.name, calculateSpotAge(spot, WR_SS14_28)[0],calculateSpotAge(spot, WR_SS14_28)[1], spot.data["UThActivityRatio"], spot.data["ThThActivityRatio"]])
 	csvfile.close()
 
 with open('crayfish_rows.csv', 'w', newline='') as csvfile:
