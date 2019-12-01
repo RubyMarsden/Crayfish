@@ -7,6 +7,10 @@ __pycache__/
 data/
 crayfish_rows.csv
 crayfish_output.csv
+*.csv
+
+#No idea what this is
+.idea/
 
 # C extensions
 *.so
