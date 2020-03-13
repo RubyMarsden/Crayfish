@@ -2,27 +2,26 @@ from models.mathbot import *
 from models.mass_peak import MassPeak
 from models.settings import *
 
-
-class FakeSpot:
-	#watch out this is a crazy hack
-	def __init__(self, spot_name):
-		self.name = spot_name
-#making a class called spot
 class Spot:
 
-	def __init__(self, spotData, config):
-		print(spotData)
-		self.name = spotData [0][0]
-		self.numberOfScans = int(spotData[1][4])
-		self.numberOfPeaks = int(spotData[1][6])
-		self.sbmBackground = int(spotData[1][15])
-		self.mpNames = [row[0] for row in spotData [4:4+self.numberOfPeaks]]
+	def __init__(self, spot_data):
+
+		self.name = spot_data[0][0]
+		parts = self.name.split("-",1)
+		if len(parts) != 2:
+			raise Exception("None standard spot name in file '" + self.name + "'. Spot names must be of the form (SAMPLE)-(ID)")
+		self.sample_name, self.id = parts
+
+		self.numberOfScans = int(spot_data[1][4])
+		self.numberOfPeaks = int(spot_data[1][6])
+		self.sbmBackground = int(spot_data[1][15])
+		self.mpNames = [row[0] for row in spot_data [4:4 + self.numberOfPeaks]]
 		self.mpNamesBackground = [BACKGROUND1, BACKGROUND2]
 		self.mpNamesNonBackground = [name for name in self.mpNames if name not in self.mpNamesBackground]
 		self.uranium_peak_name = self.find_uranium_peak_name()
-		self.mpCountTimes = {self.mpNames[i] : int(spotData[i+4][3]) for i in range(0,self.numberOfPeaks)}
-		self.is_standard = any([self.name.startswith(prefix) for prefix in config.standard_prefixes])
-		self.is_sample = any([self.name.startswith(prefix) for prefix in config.sample_prefixes])
+		self.mpCountTimes = {self.mpNames[i] : int(spot_data[i + 4][3]) for i in range(0, self.numberOfPeaks)}
+		#self.is_standard = any([self.name.startswith(prefix) for prefix in config.standard_prefixes])
+		#self.is_sample = any([self.name.startswith(prefix) for prefix in config.sample_prefixes])
 
 		self.massPeaks = {}
 		self.data = {}
@@ -34,10 +33,10 @@ class Spot:
 			lineNumber = self.numberOfPeaks+5 + i*2
 			mpName = self.mpNames[i]
 			while lineNumber < spot_number_of_rows - 1:
-				row = [float(value) for value in spotData[lineNumber][4:14]]
-				row2 = [int(value) for value in spotData[lineNumber+1][1:11]]
+				row = [float(value) for value in spot_data[lineNumber][4:14]]
+				row2 = [int(value) for value in spot_data[lineNumber + 1][1:11]]
 				ithMpRows.append(row)
-				ithMpXValues.append(float(spotData[lineNumber][1]))
+				ithMpXValues.append(float(spot_data[lineNumber][1]))
 				ithSbmRows.append(row2)
 				lineNumber += self.numberOfPeaks*2
 

@@ -10,7 +10,7 @@ class CrayfishWindow(QMainWindow):
         QMainWindow.__init__(self)
 
         self.setMinimumSize(QSize(640, 480))
-        self.setWindowTitle("CrayfishWindow")
+        self.setWindowTitle("Crayfish - v0.0")
 
         samples_overview = SamplesOverview(model)
         self.setCentralWidget(samples_overview)

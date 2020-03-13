@@ -22,10 +22,15 @@ class SamplesOverview(QWidget):
         self.tree_widget.setHeaderLabel("Samples")
         #self.list_widget.currentItemChanged.connect(self.on_selected_sample_change)
 
+        self.file_list = QTreeWidget()
+        self.file_list.setHeaderLabel("Files imported")
+
+
         self.import_button = QPushButton("Import data file")
         self.import_button.clicked.connect(self.on_import_samples_clicked)
 
         layout = QVBoxLayout()
+        layout.addWidget(self.file_list)
         layout.addWidget(self.tree_widget)
         layout.addWidget(self.import_button)
 
@@ -66,15 +71,19 @@ class SamplesOverview(QWidget):
         # model needs to do the importing
         self.model.import_samples(file_name, replace)
 
-    def on_sample_list_updated(self, samples):
+    def on_sample_list_updated(self, samples, files):
         self.tree_widget.clear()
+        self.file_list.clear()
+
+        for file in files:
+            QTreeWidgetItem(self.file_list, [file])
 
         for sample in samples:
             sample_tree_item = QTreeWidgetItem(self.tree_widget, [sample.name])
             sample_tree_item.sample = sample
             sample_tree_item.is_sample = True
             for spot in sample.spots:
-                spot_tree_item = QTreeWidgetItem(sample_tree_item, [spot.name])
+                spot_tree_item = QTreeWidgetItem(sample_tree_item, [spot.id])
                 spot_tree_item.spot = spot
                 spot_tree_item.is_sample = False
 

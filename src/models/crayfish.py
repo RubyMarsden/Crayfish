@@ -13,7 +13,6 @@ SAMPLE_PREFIXES = ["R33", "428", "PL", "G4", "545", "566", "366", "812", "GJ", "
 FILE_NAME = 'data/test.csv'
 
 
-
 # loads in the CSV data and creates a list of spots out of them
 def loadSpots(config):
     print("Loading data from " + config.input_file)
