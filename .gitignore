@@ -5,6 +5,7 @@ __pycache__/
 
 #Not my data
 data/
+tests/
 crayfish_rows.csv
 crayfish_output.csv
 *.csv
