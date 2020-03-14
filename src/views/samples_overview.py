@@ -95,3 +95,8 @@ class SamplesOverview(QWidget):
             return
         self.sample_box.setVisible(current_tree_item.is_sample)
         self.spot_box.setVisible(not current_tree_item.is_sample)
+
+        if current_tree_item.is_sample:
+            self.sample_box.display_sample(current_tree_item.sample)
+        else:
+            self.spot_box.display_spot(current_tree_item.spot)

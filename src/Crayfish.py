@@ -18,5 +18,6 @@ if __name__ == "__main__":
     model = CrayfishModel()
     window = CrayfishWindow(model)
     set_except_hook(window)
+    model.import_samples("C:/Users/19402828/Documents/Python Scripts/Crayfish\data/rm_k6_19080820_b.csv",False)
     window.show()
     sys.exit(app.exec_())
