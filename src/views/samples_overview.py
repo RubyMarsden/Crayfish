@@ -1,6 +1,8 @@
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QListWidget, QGridLayout, QTreeWidget, \
-    QTreeWidgetItem, QPushButton, QFileDialog
+    QTreeWidgetItem, QPushButton, QFileDialog, QGroupBox
 
+from views.sample_info_box import SampleInfoBox
+from views.spot_info_box import SpotInfoBox
 
 class SamplesOverview(QWidget):
     def __init__(self, model):
@@ -18,20 +20,19 @@ class SamplesOverview(QWidget):
         gridLayout.setColumnStretch(1, 1)
 
     def create_lhs(self):
-        self.tree_widget = QTreeWidget()
-        self.tree_widget.setHeaderLabel("Samples")
-        #self.list_widget.currentItemChanged.connect(self.on_selected_sample_change)
+        self.sample_tree = QTreeWidget()
+        self.sample_tree.setHeaderLabel("Samples")
+        self.sample_tree.currentItemChanged.connect(self.on_selected_sample_change)
 
         self.file_list = QTreeWidget()
         self.file_list.setHeaderLabel("Files imported")
-
 
         self.import_button = QPushButton("Import data file")
         self.import_button.clicked.connect(self.on_import_samples_clicked)
 
         layout = QVBoxLayout()
-        layout.addWidget(self.file_list)
-        layout.addWidget(self.tree_widget)
+        layout.addWidget(self.file_list,1)
+        layout.addWidget(self.sample_tree, 3)
         layout.addWidget(self.import_button)
 
         lhs_widget = QWidget()
@@ -39,17 +40,17 @@ class SamplesOverview(QWidget):
         return lhs_widget
 
     def create_rhs(self):
-        self.info_box_widget = QWidget()
-        self.rhs_title = QLabel()
-        info_box = QLabel("sample information")
-        button_widget_rhs = self.create_rhs_buttons()
-
+        self.spot_box = SpotInfoBox()
+        self.spot_box.setVisible(False)
+        self.sample_box = SampleInfoBox()
+        self.sample_box.setVisible(False)
         layout = QVBoxLayout()
-        layout.addWidget(self.rhs_title)
-        layout.addWidget(info_box)
-        layout.addWidget(button_widget_rhs)
-        self.info_box_widget.setLayout(layout)
-        return self.info_box_widget
+        layout.addWidget(self.spot_box)
+        layout.addWidget(self.sample_box)
+
+        rhs_widget = QWidget()
+        rhs_widget.setLayout(layout)
+        return rhs_widget
 
     def create_rhs_buttons(self):
         layout = QHBoxLayout()
@@ -72,14 +73,14 @@ class SamplesOverview(QWidget):
         self.model.import_samples(file_name, replace)
 
     def on_sample_list_updated(self, samples, files):
-        self.tree_widget.clear()
+        self.sample_tree.clear()
         self.file_list.clear()
 
         for file in files:
             QTreeWidgetItem(self.file_list, [file])
 
         for sample in samples:
-            sample_tree_item = QTreeWidgetItem(self.tree_widget, [sample.name])
+            sample_tree_item = QTreeWidgetItem(self.sample_tree, [sample.name])
             sample_tree_item.sample = sample
             sample_tree_item.is_sample = True
             for spot in sample.spots:
@@ -87,11 +88,10 @@ class SamplesOverview(QWidget):
                 spot_tree_item.spot = spot
                 spot_tree_item.is_sample = False
 
-    # def on_selected_sample_change(self, current_sample_item, previous_sample_item):
-    #     is_selected = current_sample_item is not None
-    #     self.edit_sample_button.setEnabled(is_selected)
-    #     self.delete_sample_button.setEnabled(is_selected)
-    #     if is_selected:
-    #         self.rhs_title.setText("Sample: " + current_sample_item.sample.name)
-    #     else:
-    #         self.rhs_title.setText("")
+    def on_selected_sample_change(self, current_tree_item, previous_tree_item):
+        if current_tree_item is None:
+            self.sample_box.setVisible(False)
+            self.spot_box.setVisible(False)
+            return
+        self.sample_box.setVisible(current_tree_item.is_sample)
+        self.spot_box.setVisible(not current_tree_item.is_sample)
