@@ -7,3 +7,6 @@ class SampleInfoBox(QGroupBox):
 
     def display_sample(self, sample):
         self.setTitle("Sample: " + sample.name)
+
+    def display_spot_list
+        pass
