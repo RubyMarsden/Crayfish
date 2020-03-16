@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QGroupBox
+from PyQt5.QtWidgets import QGroupBox, QListWidgetItem, QListWidget, QLabel, QFormLayout
 
 
 class SampleInfoBox(QGroupBox):
@@ -7,6 +7,13 @@ class SampleInfoBox(QGroupBox):
 
     def display_sample(self, sample):
         self.setTitle("Sample: " + sample.name)
+        self.spot_list = QListWidget()
 
-    def display_spot_list
-        pass
+        for spot in sample.spots:
+            self.spot_list.clear()
+            spot = QListWidgetItem(spot.name, self.spot_list)
+
+        layout = QFormLayout()
+        layout.addRow(QLabel("Spots:"), self.spot_list)
+
+        self.setLayout(layout)
