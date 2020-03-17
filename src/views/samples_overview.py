@@ -1,3 +1,4 @@
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QListWidget, QGridLayout, QTreeWidget, \
     QTreeWidgetItem, QPushButton, QFileDialog, QGroupBox
 
@@ -44,20 +45,19 @@ class SamplesOverview(QWidget):
         self.spot_box.setVisible(False)
         self.sample_box = SampleInfoBox()
         self.sample_box.setVisible(False)
+
+        self.process_button = QPushButton("Process data")
+        self.process_button.setVisible(False)
+        self.process_button.clicked.connect(self.on_process_button_clicked)
+
         layout = QVBoxLayout()
         layout.addWidget(self.spot_box)
         layout.addWidget(self.sample_box)
+        layout.addWidget(self.process_button,0, Qt.AlignBottom)
 
         rhs_widget = QWidget()
         rhs_widget.setLayout(layout)
         return rhs_widget
-
-    def create_rhs_buttons(self):
-        layout = QHBoxLayout()
-
-        button_widget_rhs = QWidget()
-        button_widget_rhs.setLayout(layout)
-        return button_widget_rhs
 
     #############
     ## Actions ##
@@ -75,6 +75,7 @@ class SamplesOverview(QWidget):
     def on_sample_list_updated(self, samples, files):
         self.sample_tree.clear()
         self.file_list.clear()
+        self.process_button.setVisible(True)
 
         for file in files:
             QTreeWidgetItem(self.file_list, [file])
@@ -100,3 +101,6 @@ class SamplesOverview(QWidget):
             self.sample_box.display_sample(current_tree_item.sample)
         else:
             self.spot_box.display_spot(current_tree_item.spot)
+
+    def on_process_button_clicked(self):
+        self.model.process_samples()

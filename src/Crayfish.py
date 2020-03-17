@@ -15,8 +15,11 @@ def set_except_hook(window):
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     app.setStyle("Fusion")
+
     model = CrayfishModel()
     window = CrayfishWindow(model)
+    model.set_view(window)
+
     set_except_hook(window)
     model.import_samples("C:/Users/19402828/Documents/Python Scripts/Crayfish\data/rm_k6_19080820_b.csv",False)
     window.show()

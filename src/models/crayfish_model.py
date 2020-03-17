@@ -1,3 +1,5 @@
+import copy
+
 from PyQt5.QtCore import pyqtSignal, QObject
 from models.sample import Sample
 from models.spot import Spot
@@ -9,6 +11,14 @@ class CrayfishModel():
         self.samples_by_name = {}
         self.imported_files = []
         self.signals = Signals()
+        self.view = None
+
+    def set_view(self, view):
+        self.view = view
+
+    ###############
+    ## Importing ##
+    ###############
 
     def import_samples(self, file_name, replace):
         if replace:
@@ -55,6 +65,16 @@ class CrayfishModel():
             if spot.sample_name not in self.samples_by_name:
                 self.samples_by_name[spot.sample_name] = Sample(spot.sample_name)
             self.samples_by_name[spot.sample_name].spots.append(spot)
+
+    ################
+    ## Processing ##
+    ################
+    def process_samples(self):
+        run_samples = copy.deepcopy(list(self.samples_by_name.values()))
+        self.view.ask_user_for_standards(run_samples)
+
+
+
 
 class Signals(QObject):
     # Define a new signal called 'trigger' that has no arguments.
