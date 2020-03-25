@@ -10,7 +10,7 @@ class MassPeak:
 		self.name = spotName + " " + mpName
 		self.mpName = mpName
 		self.rows = []
-		self.countTime = countTime
+		self.count_time = countTime
 		for i in range(numberOfScans):
 			row = Row(spotName,mpName,i,massPeakValues[i],countRowData[i],sbmRowData[i])
 			self.rows.append(row)
@@ -19,6 +19,17 @@ class MassPeak:
 	def __repr__(self):
 		return self.name
 
+	def normalise_sbm_and_subtract_sbm_background(self, sbm_background):
+		for row in self.rows:
+			row.normalise_sbm_and_subtract_sbm_background(sbm_background, self.count_time)
+
+	def get_sbm_time_series(self, row_number, start_time):
+		row = self.rows[row_number]
+		return row.get_local_sbm_time_series(self.count_time, start_time)
+
+	###################
+	### Not used yet###
+	###################
 
 	def calculateMeanAndStDevForRows(self,inputKey,outputKey):
 		for row in self.rows:

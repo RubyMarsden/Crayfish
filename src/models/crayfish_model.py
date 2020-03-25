@@ -71,9 +71,22 @@ class CrayfishModel():
     ################
     def process_samples(self):
         run_samples = copy.deepcopy(list(self.samples_by_name.values()))
-        self.view.ask_user_for_standards(run_samples)
+        equilibrium_standards = self.view.ask_user_for_equilibrium_standards(run_samples, [])
+        if equilibrium_standards is None:
+            return
 
+        age_standard_info = self.view.ask_user_for_age_standard(run_samples, equilibrium_standards)
+        if age_standard_info is None:
+            return
 
+        self.normalise_all_sbm_and_calculate_time_series(run_samples)
+        self.view.show_user_sbm_time_series(run_samples)
+
+    def normalise_all_sbm_and_calculate_time_series(self, samples):
+        for sample in samples:
+            for spot in sample.spots:
+                spot.normalise_sbm_and_subtract_sbm_background()
+                spot.calculate_sbm_time_series()
 
 
 class Signals(QObject):

@@ -1,9 +1,10 @@
 from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtWidgets import QMainWindow, QLabel, QGridLayout, QWidget, QDialog
+from PyQt5.QtWidgets import QMainWindow, QLabel, QGridLayout, QWidget, QDialog, QMessageBox, QInputDialog
 from PyQt5.QtCore import QSize
 
 from views.samples_overview import SamplesOverview
-from views.standard_selection_dialog import StandardSelectionDialog
+from views.sbm_time_series_dialog import SBMTimeSeriesDialog
+from views.standard_selection_dialog import EquilibriumStandardSelectionDialog, AgeStandardSelectionDialog
 
 
 class CrayfishWindow(QMainWindow):
@@ -16,7 +17,32 @@ class CrayfishWindow(QMainWindow):
         samples_overview = SamplesOverview(model)
         self.setCentralWidget(samples_overview)
 
-    def ask_user_for_standards(self, samples):
-        dialog = StandardSelectionDialog(samples)
+    def ask_user_for_equilibrium_standards(self, samples, unavailable_samples):
+        dialog = EquilibriumStandardSelectionDialog(samples, unavailable_samples)
         result = dialog.exec()
-        return result == QDialog.Accepted
+        if result == QDialog.Accepted:
+            return dialog.get_selected_samples()
+        return None
+
+    def ask_user_for_age_standard(self, samples, unavailable_samples):
+        reply = QMessageBox.question(self, "Age standard", "Do you have an age standard?", QMessageBox.Yes,
+                                     QMessageBox.No)
+        if reply == QMessageBox.No:
+            return False, None, None
+
+        dialog = AgeStandardSelectionDialog(samples, unavailable_samples)
+        result = dialog.exec()
+        if result == QDialog.Rejected:
+            return None
+
+        sample = dialog.get_selected_samples()[0]
+        age, ok_pressed = QInputDialog.getDouble(self, "Age standard", "What is the age of sample " + sample.name + " (ka)?",
+                                                 0, 0, 500)
+        if not ok_pressed:
+            return None
+
+        return True, sample, age
+
+    def show_user_sbm_time_series(self, samples):
+        dialog = SBMTimeSeriesDialog(samples)
+        result = dialog.exec()

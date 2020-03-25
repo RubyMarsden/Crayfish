@@ -20,8 +20,6 @@ class Spot:
 		self.mpNamesNonBackground = [name for name in self.mpNames if name not in self.mpNamesBackground]
 		self.uranium_peak_name = self.find_uranium_peak_name()
 		self.mpCountTimes = {self.mpNames[i] : int(spot_data[i + 4][3]) for i in range(0, self.numberOfPeaks)}
-		#self.is_standard = any([self.name.startswith(prefix) for prefix in config.standard_prefixes])
-		#self.is_sample = any([self.name.startswith(prefix) for prefix in config.sample_prefixes])
 
 		self.massPeaks = {}
 		self.data = {}
@@ -33,18 +31,37 @@ class Spot:
 			lineNumber = self.numberOfPeaks+5 + i*2
 			mpName = self.mpNames[i]
 			while lineNumber < spot_number_of_rows - 1:
-				row = [float(value) for value in spot_data[lineNumber][4:14]]
-				row2 = [int(value) for value in spot_data[lineNumber + 1][1:11]]
-				ithMpRows.append(row)
+				mass_peak_row = [float(value) for value in spot_data[lineNumber][4:14]]
+				sbm_row = [int(value) for value in spot_data[lineNumber + 1][1:11]]
+				ithMpRows.append(mass_peak_row)
 				ithMpXValues.append(float(spot_data[lineNumber][1]))
-				ithSbmRows.append(row2)
+				ithSbmRows.append(sbm_row)
 				lineNumber += self.numberOfPeaks*2
 
 			massPeak = MassPeak(self.name,mpName,ithMpXValues,ithMpRows,ithSbmRows, self.mpCountTimes[mpName],self.numberOfScans)
 			self.massPeaks[mpName] = massPeak
 
+		self.sbm_time_series = None
+
 	def __repr__(self):
 		return self.name
+
+	def normalise_sbm_and_subtract_sbm_background(self):
+		for massPeak in self.massPeaks.values():
+			massPeak.normalise_sbm_and_subtract_sbm_background(self.sbmBackground)
+
+	def calculate_sbm_time_series(self):
+		self.sbm_time_series = []
+		current_time = 0
+		for i in range(self.numberOfScans):
+			for massPeak in self.massPeaks.values():
+				self.sbm_time_series.extend(massPeak.get_sbm_time_series(i, current_time))
+				current_time += massPeak.count_time
+
+
+	###################
+	### Not used yet###
+	###################
 
 	def find_uranium_peak_name(self):
 		for name in self.mpNamesNonBackground:
@@ -52,7 +69,6 @@ class Spot:
 				return name
 
 		raise Exception("NO UO PEAK FOR SPOT " + self.name)
-
 
 	def calculateMeanAndStDevForRows(self,inputKey,outputKey):
 		for mp in self.massPeaks.values():
@@ -92,7 +108,7 @@ class Spot:
 	def calculateErrorWeightedMeanAndStDevForScans(self):
 		for mpName in self.mpNamesNonBackground:
 			self.massPeaks[mpName].calculateErrorWeightedMeanAndStDevForScans()
-		
+
 	def calculateActivityRatio(self):
 		ThO246 = self.massPeaks["ThO246"]
 		ThO248 = self.massPeaks["ThO248"]
@@ -100,4 +116,4 @@ class Spot:
 		key = "cpsErrorWeighted"
 		self.data["ThThActivityRatio"]= activityRatio(*ThO246.data[key],TH230_DECAY_CONSTANT,TH230_DECAY_CONSTANT_ERROR, *ThO248.data[key],TH232_DECAY_CONSTANT, TH232_DECAY_CONSTANT_ERROR)
 		self.data["UThActivityRatio"] = activityRatio(*UO251.data[key],U238_DECAY_CONSTANT,U238_DECAY_CONSTANT_ERROR, *ThO248.data[key],TH232_DECAY_CONSTANT, TH232_DECAY_CONSTANT_ERROR)
-		
+

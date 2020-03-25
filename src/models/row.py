@@ -20,6 +20,22 @@ class Row:
 	def __repr__(self):
 		return self.name
 
+	def normalise_sbm_and_subtract_sbm_background(self, sbm_background, count_time):
+		self.data["sbm_normalised"] = []
+		for i in self.rawRows["sbm"]:
+			i2 = i*MEASUREMENTS_PER_SCAN_PER_MASS_PEAK/count_time - sbm_background
+			self.data["sbm_normalised"].append(i2)
+
+	def get_local_sbm_time_series(self, count_time, start_time):
+		points = self.data["sbm_normalised"]
+		time_per_measurement = count_time/len(points)
+		local_sbm_time_series = [start_time + (i + 0.5)*time_per_measurement for i in range(len(points))]
+		return zip(local_sbm_time_series, points)
+
+
+	###################
+	### Not used yet###
+	###################
 
 	def calculateMeanAndStDev(self,inputKey,outputKey):
 		self.data[outputKey]= calculateOutlierResistantMeanAndStDev(self.rawRows[inputKey], NUMBER_OF_OUTLIERS_ALLOWED)
