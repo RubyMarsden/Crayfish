@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QListWidg
     QTreeWidgetItem, QPushButton, QFileDialog, QGroupBox
 
 from views.sample_info_box import SampleInfoBox
+from views.sample_tree import SampleTreeWidget
 from views.spot_info_box import SpotInfoBox
 
 class SamplesOverview(QWidget):
@@ -21,8 +22,7 @@ class SamplesOverview(QWidget):
         gridLayout.setColumnStretch(1, 1)
 
     def create_lhs(self):
-        self.sample_tree = QTreeWidget()
-        self.sample_tree.setHeaderLabel("Samples")
+        self.sample_tree = SampleTreeWidget()
         self.sample_tree.currentItemChanged.connect(self.on_selected_sample_change)
 
         self.file_list = QTreeWidget()
@@ -73,21 +73,13 @@ class SamplesOverview(QWidget):
         self.model.import_samples(file_name, replace)
 
     def on_sample_list_updated(self, samples, files):
-        self.sample_tree.clear()
         self.file_list.clear()
-        self.process_button.setVisible(True)
-
         for file in files:
             QTreeWidgetItem(self.file_list, [file])
 
-        for sample in samples:
-            sample_tree_item = QTreeWidgetItem(self.sample_tree, [sample.name])
-            sample_tree_item.sample = sample
-            sample_tree_item.is_sample = True
-            for spot in sample.spots:
-                spot_tree_item = QTreeWidgetItem(sample_tree_item, [spot.id])
-                spot_tree_item.spot = spot
-                spot_tree_item.is_sample = False
+        self.sample_tree.set_samples(samples)
+
+        self.process_button.setVisible(True)
 
     def on_selected_sample_change(self, current_tree_item, previous_tree_item):
         if current_tree_item is None:

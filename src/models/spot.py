@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from models.mathbot import *
 from models.mass_peak import MassPeak
 from models.settings import *
@@ -11,6 +13,8 @@ class Spot:
 		if len(parts) != 2:
 			raise Exception("None standard spot name in file '" + self.name + "'. Spot names must be of the form (SAMPLE)-(ID)")
 		self.sample_name, self.id = parts
+
+		self.date_and_time = self._parse_datetime(spot_data[0][1], spot_data[0][2])
 
 		self.numberOfScans = int(spot_data[1][4])
 		self.numberOfPeaks = int(spot_data[1][6])
@@ -42,6 +46,17 @@ class Spot:
 			self.massPeaks[mpName] = massPeak
 
 		self.sbm_time_series = None
+
+	def _parse_datetime(self, date_str, time_str):
+		day, month, year = [int(i) for i in date_str.split("/")]
+		split_time = [int(i) for i in time_str.split(":")]
+		if len(split_time) == 2:
+			hour, minute = split_time
+			second = 0
+		else:
+			hour, minute, second = split_time
+
+		return datetime(year, month, day, hour, minute, second)
 
 	def __repr__(self):
 		return self.name
