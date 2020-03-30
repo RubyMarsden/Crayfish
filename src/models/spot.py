@@ -45,6 +45,8 @@ class Spot:
 			massPeak = MassPeak(self.name,mpName,ithMpXValues,ithMpRows,ithSbmRows, self.mpCountTimes[mpName],self.numberOfScans)
 			self.massPeaks[mpName] = massPeak
 
+		self.count_time_duration = sum([massPeak.count_time for massPeak in self.massPeaks.values()])*self.numberOfScans
+
 		self.sbm_time_series = None
 
 	def _parse_datetime(self, date_str, time_str):
