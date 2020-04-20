@@ -83,13 +83,39 @@ class CrayfishModel():
         if age_standard_info is None:
             return
 
+        background_method = self.view.ask_user_for_background_correction_method()
+        if background_method is None:
+            return
+
     def normalise_all_sbm_and_calculate_time_series(self, samples):
         for sample in samples:
             for spot in sample.spots:
                 spot.normalise_sbm_and_subtract_sbm_background()
                 spot.calculate_sbm_time_series()
 
+    def normalise_all_counts_to_cps(self, samples):
+        for sample in samples:
+            for spot in sample.spots:
+                spot.normalise_all_counts_to_cps()
+
+    def linear_sbm_interpolation_and_correction_by_scan(self, samples):
+        for sample in samples:
+            for spot in sample.spots:
+                spot.normalise_counts_to_sbm()
+
+    def outlier_resistant_mean_st_dev_for_row(self, samples):
+        for sample in samples:
+            for spot in sample.spots:
+                spot.calculate_row_mean_st_dev()
+
+    def background_correction(self, samples, background_method):
+        pass
+
+    def standard_line_calculation(self, samples):
+        for sample in samples:
+            if sample.is_standard:
+                pass
+
 
 class Signals(QObject):
-    # Define a new signal called 'trigger' that has no arguments.
     sample_list_updated = pyqtSignal([list, list])

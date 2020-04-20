@@ -2,6 +2,7 @@ from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtWidgets import QMainWindow, QLabel, QGridLayout, QWidget, QDialog, QMessageBox, QInputDialog
 from PyQt5.QtCore import QSize
 
+from views.background_correction_selection_dialog import BackgroundSelectionDialog
 from views.samples_overview import SamplesOverview
 from views.sbm_time_series_dialog import SBMTimeSeriesDialog
 from views.standard_selection_dialog import EquilibriumStandardSelectionDialog, AgeStandardSelectionDialog
@@ -46,3 +47,10 @@ class CrayfishWindow(QMainWindow):
     def show_user_sbm_time_series(self, samples):
         dialog = SBMTimeSeriesDialog(samples)
         result = dialog.exec()
+
+    def ask_user_for_background_correction_method(self):
+        dialog = BackgroundSelectionDialog()
+        result = dialog.exec()
+        if result == QDialog.Accepted:
+            return dialog.get_background_correction()
+        return None
