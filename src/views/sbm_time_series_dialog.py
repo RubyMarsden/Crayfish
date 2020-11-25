@@ -1,5 +1,5 @@
 import matplotlib
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QWidget, QHBoxLayout, QLabel, QPushButton
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QWidget, QHBoxLayout, QLabel, QPushButton, QCheckBox
 from matplotlib.backend_bases import NavigationToolbar2
 
 from utils import ui_utils
@@ -36,9 +36,15 @@ class SBMTimeSeriesDialog(QDialog):
 
         self.buttons = self._create_next_and_back_buttons()
 
+        self.sample_flag_box = QCheckBox("Flag spot")
+        self.sample_flag_box.setChecked(False)
+
+        self.sample_flag_box.stateChanged.connect(self.on_flag_spot_state_changed)
+
         layout = QVBoxLayout()
         layout.addWidget(self.sample_tree)
         layout.addWidget(self.buttons)
+        layout.addWidget(self.sample_flag_box)
 
         widget = QWidget()
         widget.setLayout(layout)
@@ -109,14 +115,20 @@ class SBMTimeSeriesDialog(QDialog):
         self.back_item_button.setDisabled(previous_item is None)
 
         if current_tree_item.is_sample:
+            self.sample_flag_box.setDisabled(True)
+            self.sample_flag_box.setChecked(False)
             return
+
+        self.sample_flag_box.setDisabled(False)
+
+        if current_tree_item.spot.is_flagged:
+            self.sample_flag_box.setChecked(True)
+        else:
+            self.sample_flag_box.setChecked(False)
 
         self.plot_time_series(current_tree_item.spot.sbm_time_series, self.axis)
 
         self.highlight_spot_sbm(current_tree_item.spot)
-
-
-
 
     def create_all_sbm_time_series(self, samples, axis):
         axis.spines['top'].set_visible(False)
@@ -128,25 +140,26 @@ class SBMTimeSeriesDialog(QDialog):
         all_spots = []
         for sample in samples:
             all_spots.extend(sample.spots)
-        sorted_spots = sorted(all_spots, key= lambda spot: spot.date_and_time)
+        sorted_spots = sorted(all_spots, key=lambda spot: spot.date_and_time)
 
         self.start_end_time = {}
         time = 0
         interspot_time = 100
         for spot in sorted_spots:
             xs, ys = zip(*spot.sbm_time_series)
-            output_xs = [(x + time)/3600 for x in xs]
-            axis.plot(output_xs, ys, color = 'b')
+            output_xs = [(x + time) / 3600 for x in xs]
+            axis.plot(output_xs, ys, color='b')
             self.start_end_time[spot] = time, time + spot.count_time_duration
             time += spot.count_time_duration + interspot_time
 
-        axis.set_xlim(0, time/3600)
+        axis.set_xlim(0, time / 3600)
 
     def highlight_spot_sbm(self, spot):
         if self.highlight_area is not None:
             self.highlight_area.remove()
         start_time, end_time = self.start_end_time[spot]
-        self.highlight_area = self.all_axis.fill_betweenx([0, 300000], start_time/3600, end_time/3600, facecolor='#ff000080')
+        self.highlight_area = self.all_axis.fill_betweenx([0, 300000], start_time / 3600, end_time / 3600,
+                                                          facecolor='#ff000080')
         self.canvas.draw()
 
     def on_next_item_clicked(self):
@@ -163,3 +176,11 @@ class SBMTimeSeriesDialog(QDialog):
         current_item = self.sample_tree.currentItem()
         previous_item = self.sample_tree.itemAbove(current_item)
         self.sample_tree.setCurrentItem(previous_item)
+
+    def on_flag_spot_state_changed(self):
+        sample = self.sample_tree.currentItem()
+        if self.sample_flag_box.isChecked():
+            sample.spot.is_flagged = True
+        else:
+            sample.spot.is_flagged = False
+

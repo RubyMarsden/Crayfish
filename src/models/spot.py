@@ -49,6 +49,8 @@ class Spot:
 
 		self.sbm_time_series = None
 
+		self.is_flagged = False
+
 	def _parse_datetime(self, date_str, time_str):
 		day, month, year = [int(i) for i in date_str.split("/")]
 		split_time = [int(i) for i in time_str.split(":")]
