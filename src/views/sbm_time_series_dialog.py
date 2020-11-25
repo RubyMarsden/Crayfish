@@ -115,16 +115,11 @@ class SBMTimeSeriesDialog(QDialog):
         self.back_item_button.setDisabled(previous_item is None)
 
         if current_tree_item.is_sample:
-            self.sample_flag_box.setDisabled(True)
-            self.sample_flag_box.setChecked(False)
+            self.sample_flag_box.setVisible(False)
             return
 
-        self.sample_flag_box.setDisabled(False)
-
-        if current_tree_item.spot.is_flagged:
-            self.sample_flag_box.setChecked(True)
-        else:
-            self.sample_flag_box.setChecked(False)
+        self.sample_flag_box.setVisible(True)
+        self.sample_flag_box.setChecked(current_tree_item.spot.is_flagged)
 
         self.plot_time_series(current_tree_item.spot.sbm_time_series, self.axis)
 
@@ -179,8 +174,5 @@ class SBMTimeSeriesDialog(QDialog):
 
     def on_flag_spot_state_changed(self):
         sample = self.sample_tree.currentItem()
-        if self.sample_flag_box.isChecked():
-            sample.spot.is_flagged = True
-        else:
-            sample.spot.is_flagged = False
+        sample.spot.is_flagged = self.sample_flag_box.isChecked()
 
