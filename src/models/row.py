@@ -32,6 +32,14 @@ class Row:
 		local_sbm_time_series = [start_time + (i + 0.5)*time_per_measurement for i in range(len(points))]
 		return zip(local_sbm_time_series, points)
 
+	def normalise_all_counts_to_cps(self, count_time):
+		self.data["counts normalised to time"] = []
+		for i in self.rawRows["counts"]:
+			i2 = i*MEASUREMENTS_PER_SCAN_PER_MASS_PEAK/count_time
+			self.data["counts normalised to time"].append(i2)
+
+	def linear_sbm_interpolation_and_correction_by_scan(self):
+		pass
 
 	###################
 	### Not used yet###

@@ -75,6 +75,14 @@ class Spot:
 				self.sbm_time_series.extend(massPeak.get_sbm_time_series(i, current_time))
 				current_time += massPeak.count_time
 
+	def normalise_all_counts_to_cps(self):
+		for massPeak in self.massPeaks.values():
+			massPeak.normalise_all_counts_to_cps()
+
+	def linear_sbm_interpolation_and_correction_by_scan(self):
+		for massPeak in self.massPeaks.values():
+			massPeak.linear_sbm_interpolation_and_correction_by_scan(self.numberOfScans)
+
 
 	###################
 	### Not used yet###
