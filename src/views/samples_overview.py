@@ -23,7 +23,7 @@ class SamplesOverview(QWidget):
 
     def create_lhs(self):
         self.sample_tree = SampleTreeWidget()
-        self.sample_tree.currentItemChanged.connect(self.on_selected_sample_change)
+        self.sample_tree.tree.currentItemChanged.connect(self.on_selected_sample_change)
 
         self.file_list = QTreeWidget()
         self.file_list.setHeaderLabel("Files imported")

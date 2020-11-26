@@ -73,6 +73,8 @@ class CrayfishModel():
         run_samples = copy.deepcopy(list(self.samples_by_name.values()))
 
         self.normalise_all_sbm_and_calculate_time_series(run_samples)
+        # THIS IS ONLY HERE FOR DEVELOPMENT
+        self.view.show_user_cps_time_series(run_samples)
         self.view.show_user_sbm_time_series(run_samples)
 
         equilibrium_standards = self.view.ask_user_for_equilibrium_standards(run_samples, [])
@@ -82,6 +84,8 @@ class CrayfishModel():
         age_standard_info = self.view.ask_user_for_age_standard(run_samples, equilibrium_standards)
         if age_standard_info is None:
             return
+
+
 
         background_method = self.view.ask_user_for_background_correction_method()
         if background_method is None:

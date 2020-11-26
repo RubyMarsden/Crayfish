@@ -1,4 +1,5 @@
 import matplotlib
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QWidget, QHBoxLayout, QLabel, QPushButton, QCheckBox
 from matplotlib.backend_bases import NavigationToolbar2
 
@@ -25,51 +26,39 @@ class SBMTimeSeriesDialog(QDialog):
         layout.addWidget(self._create_left_widget())
         layout.addWidget(self._create_right_widget())
         self.setLayout(layout)
-        first_sample = self.sample_tree.topLevelItem(0)
-        first_spot = first_sample.child(0)
-        self.sample_tree.setCurrentItem(first_spot)
+
 
     def _create_right_widget(self):
         self.sample_tree = SampleTreeWidget()
         self.sample_tree.set_samples(self.samples)
-        self.sample_tree.currentItemChanged.connect(self.on_selected_sample_change)
+        self.sample_tree.tree.currentItemChanged.connect(self.on_selected_sample_change)
 
-        self.buttons = self._create_next_and_back_buttons()
 
+        self.continue_button = QPushButton("Continue")
+        self.continue_button.clicked.connect(self.accept)
+
+        layout = QVBoxLayout()
+        layout.addWidget(self.sample_tree)
+        layout.addWidget(self.continue_button, alignment=Qt.AlignRight)
+
+        widget = QWidget()
+        widget.setLayout(layout)
+
+        return widget
+
+
+    def _create_left_widget(self):
         self.sample_flag_box = QCheckBox("Flag spot")
         self.sample_flag_box.setChecked(False)
 
         self.sample_flag_box.stateChanged.connect(self.on_flag_spot_state_changed)
 
+        top_bar = QHBoxLayout()
+        top_bar.addWidget(QLabel("Secondary beam monitor"))
+        top_bar.addWidget(self.sample_flag_box, alignment= Qt.AlignRight)
+
         layout = QVBoxLayout()
-        layout.addWidget(self.sample_tree)
-        layout.addWidget(self.buttons)
-        layout.addWidget(self.sample_flag_box)
-
-        widget = QWidget()
-        widget.setLayout(layout)
-
-        return widget
-
-    def _create_next_and_back_buttons(self):
-
-        self.next_item_button = QPushButton("Next")
-        self.next_item_button.clicked.connect(self.on_next_item_clicked)
-        self.back_item_button = QPushButton("Back")
-        self.back_item_button.clicked.connect(self.on_back_item_clicked)
-
-        layout = QHBoxLayout()
-        layout.addWidget(self.back_item_button)
-        layout.addWidget(self.next_item_button)
-
-        widget = QWidget()
-        widget.setLayout(layout)
-
-        return widget
-
-    def _create_left_widget(self):
-        layout = QVBoxLayout()
-        layout.addWidget(QLabel("Secondary beam monitor"))
+        layout.addLayout(top_bar)
         layout.addWidget(self._create_sbm_graphs())
 
         widget = QWidget()
@@ -107,12 +96,6 @@ class SBMTimeSeriesDialog(QDialog):
         if current_tree_item is None:
             self.axis.clear()
             return
-
-        next_item = self.sample_tree.itemBelow(current_tree_item)
-        self.next_item_button.setDisabled(next_item is None)
-
-        previous_item = self.sample_tree.itemAbove(current_tree_item)
-        self.back_item_button.setDisabled(previous_item is None)
 
         if current_tree_item.is_sample:
             self.sample_flag_box.setVisible(False)
@@ -157,22 +140,9 @@ class SBMTimeSeriesDialog(QDialog):
                                                           facecolor='#ff000080')
         self.canvas.draw()
 
-    def on_next_item_clicked(self):
-        self.back_item_button.setEnabled(True)
-        current_item = self.sample_tree.currentItem()
-        next_item = self.sample_tree.itemBelow(current_item)
-        if current_item.is_sample and current_item.childCount() > 0:
-            next_item = current_item.child(0)
 
-        self.sample_tree.setCurrentItem(next_item)
-
-    def on_back_item_clicked(self):
-        self.next_item_button.setEnabled(True)
-        current_item = self.sample_tree.currentItem()
-        previous_item = self.sample_tree.itemAbove(current_item)
-        self.sample_tree.setCurrentItem(previous_item)
 
     def on_flag_spot_state_changed(self):
-        sample = self.sample_tree.currentItem()
+        sample = self.sample_tree.tree.currentItem()
         sample.spot.is_flagged = self.sample_flag_box.isChecked()
 
