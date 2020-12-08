@@ -1,5 +1,5 @@
 import matplotlib
-from PyQt5.QtWidgets import QHBoxLayout, QDialog, QPushButton, QWidget, QVBoxLayout, QLabel, QCheckBox
+from PyQt5.QtWidgets import QHBoxLayout, QDialog, QPushButton, QWidget, QVBoxLayout, QLabel, QCheckBox, QGridLayout
 from PyQt5.QtCore import Qt
 
 matplotlib.use('QT5Agg')
@@ -22,7 +22,7 @@ class cpsTimeSeriesDialog(QDialog):
         self.setMinimumWidth(450)
 
         layout = QHBoxLayout()
-        layout.addWidget(self._create_left_widget())
+        layout.addWidget(self._create_left_widget(self.samples))
         layout.addWidget(self._create_right_widget())
         self.setLayout(layout)
 
@@ -45,7 +45,7 @@ class cpsTimeSeriesDialog(QDialog):
         return widget
 
 
-    def _create_left_widget(self):
+    def _create_left_widget(self, samples):
         self.point_flag_box = QCheckBox("Flag point")
         self.point_flag_box.setChecked(False)
 
@@ -57,13 +57,13 @@ class cpsTimeSeriesDialog(QDialog):
 
         layout = QVBoxLayout()
         layout.addLayout(top_bar)
-        layout.addWidget(self._create_cps_graph())
+        layout.addWidget(self._create_cps_graph_and_point_selection(samples))
 
         widget = QWidget()
         widget.setLayout(layout)
         return widget
 
-    def _create_cps_graph_and_point_selection(self):
+    def _create_cps_graph_and_point_selection(self, samples):
 
         graph_and_points = QWidget()
         layout = QVBoxLayout()
@@ -76,15 +76,17 @@ class cpsTimeSeriesDialog(QDialog):
 
         graph_widget, self.canvas = ui_utils.create_figure_widget(fig, self)
 
-        layout.addLayout(graph_widget)
+        layout.addWidget(graph_widget)
 
-        checkboxes = self.make_mass_check_boxes()
+        checkboxes = self.make_mass_check_boxes(samples)
 
         layout.addLayout(checkboxes)
 
         mini_background_graph = self.make_background_graph()
 
         layout.addLayout(mini_background_graph)
+
+        graph_and_points.setLayout(layout)
 
         return graph_and_points
 
@@ -115,4 +117,23 @@ class cpsTimeSeriesDialog(QDialog):
 
 
     def plot_cps_graph(self, data, axis):
+        pass
+
+    def make_mass_check_boxes(self, samples):
+
+        for sample in samples:
+            for spot in sample.spots:
+                masses = spot.mpNames
+
+        checkbox_layout = QGridLayout()
+
+        for i, mass in enumerate(masses):
+            box = QCheckBox(mass)
+            checkbox_layout.addWidget(box, i // 3, i % 3)
+
+        return checkbox_layout
+
+
+
+    def make_background_graph(self):
         pass
