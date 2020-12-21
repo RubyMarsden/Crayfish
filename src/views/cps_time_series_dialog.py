@@ -26,7 +26,6 @@ class cpsTimeSeriesDialog(QDialog):
         layout.addWidget(self._create_right_widget())
         self.setLayout(layout)
 
-
     def _create_right_widget(self):
         self.sample_tree = SampleTreeWidget()
         self.sample_tree.set_samples(self.samples)
@@ -44,16 +43,15 @@ class cpsTimeSeriesDialog(QDialog):
 
         return widget
 
-
     def _create_left_widget(self, samples):
-        self.point_flag_box = QCheckBox("Flag point")
-        self.point_flag_box.setChecked(False)
+        self.sample_flag_box = QCheckBox("Flag spot")
+        self.sample_flag_box.setChecked(False)
 
-        self.point_flag_box.stateChanged.connect(self.on_flag_point_state_changed)
+        self.sample_flag_box.stateChanged.connect(self.on_flag_point_state_changed)
 
         top_bar = QHBoxLayout()
         top_bar.addWidget(QLabel("Sample and spot name"))
-        top_bar.addWidget(self.point_flag_box, alignment=Qt.AlignRight)
+        top_bar.addWidget(self.sample_flag_box, alignment=Qt.AlignRight)
 
         layout = QVBoxLayout()
         layout.addLayout(top_bar)
@@ -69,10 +67,7 @@ class cpsTimeSeriesDialog(QDialog):
         layout = QVBoxLayout()
 
         fig = plt.figure()
-        self.axis = fig.add_subplot(2, 1, 1)
-        self.all_axis = fig.add_subplot(2, 1, 2)
-
-        # self.create_all_sbm_time_series(self.samples, self.all_axis)
+        self.axes = plt.axes()
 
         graph_widget, self.canvas = ui_utils.create_figure_widget(fig, self)
 
@@ -100,24 +95,32 @@ class cpsTimeSeriesDialog(QDialog):
             return
 
         if current_tree_item.is_sample:
-            self.point_flag_box.setVisible(False)
+            self.sample_flag_box.setVisible(False)
             return
 
-        self.point_flag_box.setVisible(True)
-        # self.sample_flag_box.setChecked(current_tree_item.spot.is_flagged)
+        self.sample_flag_box.setVisible(True)
+        self.sample_flag_box.setChecked(current_tree_item.spot.is_flagged)
 
-        self.plot_cps_graph(current_tree_item.spot.sbm_time_series, self.axis)
-
-        # self.highlight_spot_sbm(current_tree_item.spot)
-
+        self.plot_cps_graph(current_tree_item.spot.massPeaks, self.axes)
 
     def on_flag_point_state_changed(self):
         sample = self.sample_tree.tree.currentItem()
-        # sample.spot.is_flagged = self.point_flag_box.isChecked()
+        sample.spot.is_flagged = self.sample_flag_box.isChecked()
 
-
-    def plot_cps_graph(self, data, axis):
-        pass
+    def plot_cps_graph(self, mass_peaks, axis):
+        axis.clear()
+        axis.spines['top'].set_visible(False)
+        axis.spines['right'].set_visible(False)
+        for massPeak in mass_peaks.values():
+            for row in massPeak.rows:
+                xs = [i for i in range(len(row.data["counts normalised to time"]))]
+                ys = [value for value in row.data["counts normalised to time"]]
+            axis.plot(xs, ys, label = massPeak.mpName)
+            plt.legend(loc = "upper left")
+        axis.set_xlabel("Spot number")
+        axis.set_ylabel("cps")
+        plt.tight_layout()
+        self.canvas.draw()
 
     def make_mass_check_boxes(self, samples):
 

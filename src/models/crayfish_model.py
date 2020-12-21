@@ -73,6 +73,7 @@ class CrayfishModel():
         run_samples = copy.deepcopy(list(self.samples_by_name.values()))
 
         self.normalise_all_sbm_and_calculate_time_series(run_samples)
+        self.normalise_all_counts_to_cps(run_samples)
         # THIS IS ONLY HERE FOR DEVELOPMENT
         self.view.show_user_cps_time_series(run_samples)
         self.view.show_user_sbm_time_series(run_samples)

@@ -33,7 +33,6 @@ class SBMTimeSeriesDialog(QDialog):
         self.sample_tree.set_samples(self.samples)
         self.sample_tree.tree.currentItemChanged.connect(self.on_selected_sample_change)
 
-
         self.continue_button = QPushButton("Continue")
         self.continue_button.clicked.connect(self.accept)
 
