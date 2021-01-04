@@ -77,8 +77,11 @@ class CrayfishModel():
         self.normalise_peak_cps_by_sbm(run_samples)
 
         # THIS IS ONLY HERE FOR DEVELOPMENT
-        self.view.show_user_cps_time_series(run_samples)
+        self.view.show_user_ages(run_samples)
+
         self.view.show_user_sbm_time_series(run_samples)
+
+        self.view.show_user_cps_time_series(run_samples)
 
         equilibrium_standards = self.view.ask_user_for_equilibrium_standards(run_samples, [])
         if equilibrium_standards is None:
@@ -88,11 +91,11 @@ class CrayfishModel():
         if age_standard_info is None:
             return
 
-
-
         background_method = self.view.ask_user_for_background_correction_method()
         if background_method is None:
             return
+
+
 
     def normalise_all_sbm_and_calculate_time_series(self, samples):
         for sample in samples:

@@ -7,6 +7,7 @@ from views.cps_time_series_dialog import cpsTimeSeriesDialog
 from views.samples_overview import SamplesOverview
 from views.sbm_time_series_dialog import SBMTimeSeriesDialog
 from views.standard_selection_dialog import EquilibriumStandardSelectionDialog, AgeStandardSelectionDialog
+from views.ages_dialog import AgeDialog
 
 
 class CrayfishWindow(QMainWindow):
@@ -59,3 +60,7 @@ class CrayfishWindow(QMainWindow):
         if result == QDialog.Accepted:
             return dialog.get_background_correction()
         return None
+
+    def show_user_ages(self, samples):
+        dialog = AgeDialog(samples)
+        result = dialog.exec()
