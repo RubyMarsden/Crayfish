@@ -1,5 +1,6 @@
 import matplotlib
-from PyQt5.QtWidgets import QHBoxLayout, QDialog, QPushButton, QWidget, QVBoxLayout, QLabel, QCheckBox, QGridLayout
+from PyQt5.QtWidgets import QHBoxLayout, QDialog, QPushButton, QWidget, QVBoxLayout, QLabel, QCheckBox, QGridLayout, \
+    QRadioButton
 from PyQt5.QtCore import Qt
 
 matplotlib.use('QT5Agg')
@@ -26,9 +27,10 @@ class cpsTimeSeriesDialog(QDialog):
         layout.addWidget(self._create_right_widget())
         self.setLayout(layout)
 
+        self.sample_tree.set_samples(self.samples)
+
     def _create_right_widget(self):
         self.sample_tree = SampleTreeWidget()
-        self.sample_tree.set_samples(self.samples)
         self.sample_tree.tree.currentItemChanged.connect(self.on_selected_sample_change)
 
         self.continue_button = QPushButton("Continue")
@@ -49,8 +51,14 @@ class cpsTimeSeriesDialog(QDialog):
 
         self.sample_flag_box.stateChanged.connect(self.on_flag_point_state_changed)
 
+        self.sbm_check_box = QCheckBox("Normalise to sbm")
+        self.sbm_check_box.setChecked(False)
+
+        self.sbm_check_box.stateChanged.connect(self.on_sbm_box_state_changed)
+
         top_bar = QHBoxLayout()
         top_bar.addWidget(QLabel("Sample and spot name"))
+        top_bar.addWidget(self.sbm_check_box, alignment=Qt.AlignCenter)
         top_bar.addWidget(self.sample_flag_box, alignment=Qt.AlignRight)
 
         layout = QVBoxLayout()
@@ -101,24 +109,35 @@ class cpsTimeSeriesDialog(QDialog):
         self.sample_flag_box.setVisible(True)
         self.sample_flag_box.setChecked(current_tree_item.spot.is_flagged)
 
-        self.plot_cps_graph(current_tree_item.spot.massPeaks, self.axes)
+        if self.sbm_check_box.isChecked():
+            self.plot_cps_graph(current_tree_item.spot.massPeaks, self.axes, "peak cps normalised by sbm")
+        else:
+            self.plot_cps_graph(current_tree_item.spot.massPeaks, self.axes, "counts normalised to time")
 
     def on_flag_point_state_changed(self):
         sample = self.sample_tree.tree.currentItem()
         sample.spot.is_flagged = self.sample_flag_box.isChecked()
 
-    def plot_cps_graph(self, mass_peaks, axis):
+    def on_sbm_box_state_changed(self):
+        current_tree_item = self.sample_tree.tree.currentItem()
+        if self.sbm_check_box.isChecked():
+            self.plot_cps_graph(current_tree_item.spot.massPeaks, self.axes, "peak cps normalised by sbm")
+        else:
+            self.plot_cps_graph(current_tree_item.spot.massPeaks, self.axes,  "counts normalised to time")
+
+
+    def plot_cps_graph(self, mass_peaks, axis, key):
         axis.clear()
         axis.spines['top'].set_visible(False)
         axis.spines['right'].set_visible(False)
         for massPeak in mass_peaks.values():
             for row in massPeak.rows:
-                xs = [i for i in range(len(row.data["counts normalised to time"]))]
-                ys = [value for value in row.data["counts normalised to time"]]
+                xs = [i for i in range(len(row.data[key]))]
+                ys = [value for value in row.data[key]]
             axis.plot(xs, ys, label = massPeak.mpName)
             plt.legend(loc = "upper left")
         axis.set_xlabel("Spot number")
-        axis.set_ylabel("cps")
+        axis.set_ylabel(key)
         plt.tight_layout()
         self.canvas.draw()
 

@@ -38,7 +38,14 @@ class Row:
 			i2 = i*MEASUREMENTS_PER_SCAN_PER_MASS_PEAK/count_time
 			self.data["counts normalised to time"].append(i2)
 
-	def linear_sbm_interpolation_and_correction_by_scan(self):
+	def normalise_peak_cps_by_sbm(self):
+		self.data["peak cps normalised by sbm"] = []
+		cps = self.data["counts normalised to time"]
+		sbm = self.data["sbm_normalised"]
+		for i, j in zip(cps, sbm):
+			i2 = i/j
+			self.data["peak cps normalised by sbm"].append(i2)
+
 		pass
 
 	###################

@@ -74,6 +74,8 @@ class CrayfishModel():
 
         self.normalise_all_sbm_and_calculate_time_series(run_samples)
         self.normalise_all_counts_to_cps(run_samples)
+        self.normalise_peak_cps_by_sbm(run_samples)
+
         # THIS IS ONLY HERE FOR DEVELOPMENT
         self.view.show_user_cps_time_series(run_samples)
         self.view.show_user_sbm_time_series(run_samples)
@@ -103,10 +105,10 @@ class CrayfishModel():
             for spot in sample.spots:
                 spot.normalise_all_counts_to_cps()
 
-    def linear_sbm_interpolation_and_correction_by_scan(self, samples):
+    def normalise_peak_cps_by_sbm(self, samples):
         for sample in samples:
             for spot in sample.spots:
-                spot.normalise_counts_to_sbm()
+                spot.normalise_peak_cps_by_sbm()
 
     def outlier_resistant_mean_st_dev_for_row(self, samples):
         for sample in samples:

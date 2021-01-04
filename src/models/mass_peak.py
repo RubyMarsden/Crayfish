@@ -31,9 +31,9 @@ class MassPeak:
 		for row in self.rows:
 			row.normalise_all_counts_to_cps(self.count_time)
 
-	def linear_sbm_interpolation_and_correction_by_scan(self, number_of_scans):
+	def normalise_peak_cps_by_sbm(self):
 		for row in self.rows:
-			row.linear_sbm_interpolation_and_correction_by_scan(number_of_scans)
+			row.normalise_peak_cps_by_sbm()
 
 	###################
 	### Not used yet###

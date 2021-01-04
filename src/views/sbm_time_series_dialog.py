@@ -27,10 +27,10 @@ class SBMTimeSeriesDialog(QDialog):
         layout.addWidget(self._create_right_widget())
         self.setLayout(layout)
 
+        self.sample_tree.set_samples(self.samples)
 
     def _create_right_widget(self):
         self.sample_tree = SampleTreeWidget()
-        self.sample_tree.set_samples(self.samples)
         self.sample_tree.tree.currentItemChanged.connect(self.on_selected_sample_change)
 
         self.continue_button = QPushButton("Continue")
@@ -45,11 +45,8 @@ class SBMTimeSeriesDialog(QDialog):
 
         return widget
 
-
     def _create_left_widget(self):
         self.sample_flag_box = QCheckBox("Flag spot")
-        self.sample_flag_box.setChecked(False)
-
         self.sample_flag_box.stateChanged.connect(self.on_flag_spot_state_changed)
 
         top_bar = QHBoxLayout()
@@ -92,16 +89,16 @@ class SBMTimeSeriesDialog(QDialog):
         self.canvas.draw()
 
     def on_selected_sample_change(self, current_tree_item, previous_tree_item):
-        if current_tree_item is None:
-            self.axis.clear()
-            return
-
         if current_tree_item.is_sample:
             self.sample_flag_box.setVisible(False)
             return
 
         self.sample_flag_box.setVisible(True)
         self.sample_flag_box.setChecked(current_tree_item.spot.is_flagged)
+
+        if current_tree_item is None:
+            self.axis.clear()
+            return
 
         self.plot_time_series(current_tree_item.spot.sbm_time_series, self.axis)
 
@@ -138,7 +135,6 @@ class SBMTimeSeriesDialog(QDialog):
         self.highlight_area = self.all_axis.fill_betweenx([0, 300000], start_time / 3600, end_time / 3600,
                                                           facecolor='#ff000080')
         self.canvas.draw()
-
 
 
     def on_flag_spot_state_changed(self):

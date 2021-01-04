@@ -81,9 +81,9 @@ class Spot:
 		for massPeak in self.massPeaks.values():
 			massPeak.normalise_all_counts_to_cps()
 
-	def linear_sbm_interpolation_and_correction_by_scan(self):
+	def normalise_peak_cps_by_sbm(self):
 		for massPeak in self.massPeaks.values():
-			massPeak.linear_sbm_interpolation_and_correction_by_scan(self.numberOfScans)
+			massPeak.normalise_peak_cps_by_sbm()
 
 
 	###################
