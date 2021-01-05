@@ -2,7 +2,7 @@ import copy
 
 from PyQt5.QtCore import pyqtSignal, QObject
 from models.sample import Sample
-from models.spot import Spot
+from models.spot import Spot, BACKGROUND1, BACKGROUND2
 import csv
 
 
@@ -118,7 +118,7 @@ class CrayfishModel():
     def background_correction(self, samples, background_method):
         for sample in samples:
             for spot in sample.spots:
-                spot.background_correction(background_method)
+                spot.background_correction(background_method, spot.massPeaks[BACKGROUND1], spot.massPeaks[BACKGROUND2])
 
     def standard_line_calculation(self, samples):
         for sample in samples:

@@ -35,13 +35,13 @@ class MassPeak:
 		for row in self.rows:
 			row.normalise_peak_cps_by_sbm()
 
-	def background_correction_230Th(self, background_method):
+	def background_correction_230Th(self, background_method, background1, background2):
 		for row in self.rows:
-			row.background_correction_230Th(background_method)
+			row.background_correction_230Th(background_method, background1, background2)
 
-	def background_correction_all_peaks(self):
-		for row in self.rows:
-			row.background_correction_all_peaks()
+	def background_correction_all_peaks(self, background2):
+			for row in self.rows:
+				row.background_correction_all_peaks(background2)
 
 	###################
 	### Not used yet###

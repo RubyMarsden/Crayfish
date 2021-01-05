@@ -46,28 +46,40 @@ class Row:
 			i2 = i/j
 			self.data["peak cps normalised by sbm"].append(i2)
 
-	def background_correction_230Th(self, background_method):
+	def background_correction_230Th(self, background_method, background1, background2):
 		if background_method == "Exponential":
-			self._exponential_correction()
+			self._exponential_correction(background1, background2)
 		if background_method == "Linear":
-			self._linear_correction()
+			self._linear_correction(background1, background2)
 		if background_method == "No further 230Th background correction":
-			self._constant_correction()
+			self._constant_correction(background2)
 		else:
 			raise Exception("No background correction selected")
+		# TODO
+
+	def background_correction_all_peaks(self, mpNamesNonBackground, background2):
+		if self.mpName not in mpNamesNonBackground:
+			raise Exception("Calling background subtraction on a background peak")
+		# TODO
 
 	@staticmethod
 	def _exponential_correction(self):
+		if self.mpName != "ThO246":
+			raise Exception("Calling exponential background subtraction on a non-ThO246 mass peak")
 		pass
 	# TODO
 
 	@staticmethod
 	def _linear_correction(self):
+		if self.mpName != "ThO246":
+			raise Exception("Calling linear background subtraction on a non-ThO246 mass peak")
 		pass
 	# TODO
 
 	@staticmethod
 	def _constant_correction(self):
+		if self.mpName != "ThO246":
+			raise Exception("Calling constant background subtraction on a non-ThO246 mass peak")
 		pass
 	# TODO
 
