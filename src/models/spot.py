@@ -85,6 +85,13 @@ class Spot:
 		for massPeak in self.massPeaks.values():
 			massPeak.normalise_peak_cps_by_sbm()
 
+	# Working on this
+	def background_correction(self, background_method):
+		for massPeak in self.massPeaks.values():
+			if massPeak.mpName == "ThO246":
+				massPeak.background_correction_230Th(background_method)
+			elif massPeak.mpName in self.mpNamesNonBackground:
+				massPeak.background_correction_all_peaks()
 
 	###################
 	### Not used yet###

@@ -8,7 +8,7 @@ class Row:
 		self.name = spotName + " " + mpName + " " + str(scanNumber)
 		self.mpName = mpName
 		self.scan_number = str(scanNumber)
-		#self.time = timeOfScan
+		# self.time = timeOfScan
 		self.massPeakValue = massPeakValue
 
 		self.rawRows = {}
@@ -46,7 +46,30 @@ class Row:
 			i2 = i/j
 			self.data["peak cps normalised by sbm"].append(i2)
 
+	def background_correction_230Th(self, background_method):
+		if background_method == "Exponential":
+			self._exponential_correction()
+		if background_method == "Linear":
+			self._linear_correction()
+		if background_method == "No further 230Th background correction":
+			self._constant_correction()
+		else:
+			raise Exception("No background correction selected")
+
+	@staticmethod
+	def _exponential_correction(self):
 		pass
+	# TODO
+
+	@staticmethod
+	def _linear_correction(self):
+		pass
+	# TODO
+
+	@staticmethod
+	def _constant_correction(self):
+		pass
+	# TODO
 
 	###################
 	### Not used yet###

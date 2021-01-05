@@ -76,13 +76,6 @@ class CrayfishModel():
         self.normalise_all_counts_to_cps(run_samples)
         self.normalise_peak_cps_by_sbm(run_samples)
 
-        # THIS IS ONLY HERE FOR DEVELOPMENT
-        self.view.show_user_ages(run_samples)
-
-        self.view.show_user_sbm_time_series(run_samples)
-
-        self.view.show_user_cps_time_series(run_samples)
-
         equilibrium_standards = self.view.ask_user_for_equilibrium_standards(run_samples, [])
         if equilibrium_standards is None:
             return
@@ -95,7 +88,16 @@ class CrayfishModel():
         if background_method is None:
             return
 
+        self.background_correction(background_method, run_samples)
+        self.standard_line_calculation(run_samples)
+        self.age_calculation(run_samples)
 
+        # THIS IS ONLY HERE FOR DEVELOPMENT
+        self.view.show_user_ages(run_samples)
+
+        self.view.show_user_sbm_time_series(run_samples)
+
+        self.view.show_user_cps_time_series(run_samples)
 
     def normalise_all_sbm_and_calculate_time_series(self, samples):
         for sample in samples:
@@ -113,19 +115,22 @@ class CrayfishModel():
             for spot in sample.spots:
                 spot.normalise_peak_cps_by_sbm()
 
-    def outlier_resistant_mean_st_dev_for_row(self, samples):
+    def background_correction(self, samples, background_method):
         for sample in samples:
             for spot in sample.spots:
-                spot.calculate_row_mean_st_dev()
-
-    def background_correction(self, samples, background_method):
-        pass
+                spot.background_correction(background_method)
 
     def standard_line_calculation(self, samples):
         for sample in samples:
             if sample.is_standard:
-                pass
+                for spot in sample.spots:
+                    spot.standard_line_calculation()
 
+    def age_calculation(self, samples):
+        for sample in samples:
+            if not sample.is_standard:
+                for spot in sample.spots:
+                    spot.age_calculation()
 
 class Signals(QObject):
     sample_list_updated = pyqtSignal([list, list])
