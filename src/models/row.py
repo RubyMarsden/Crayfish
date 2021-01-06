@@ -1,3 +1,4 @@
+from models.background_method import BackgroundCorrection
 from models.mathbot import *
 from models.settings import *
 import math
@@ -47,37 +48,51 @@ class Row:
 			self.data["peak cps normalised by sbm"].append(i2)
 
 	def background_correction_230Th(self, background_method, background1, background2):
-		if background_method == "Exponential":
+		if background_method == BackgroundCorrection.EXP:
 			self._exponential_correction(background1, background2)
-		if background_method == "Linear":
+		elif background_method == BackgroundCorrection.LIN:
 			self._linear_correction(background1, background2)
-		if background_method == "No further 230Th background correction":
+		elif background_method == BackgroundCorrection.CONST:
 			self._constant_correction(background2)
 		else:
 			raise Exception("No background correction selected")
-		# TODO
 
-	def background_correction_all_peaks(self, mpNamesNonBackground, background2):
-		if self.mpName not in mpNamesNonBackground:
-			raise Exception("Calling background subtraction on a background peak")
-		# TODO
 
-	@staticmethod
-	def _exponential_correction(self):
+	def background_correction_all_peaks(self, background2):
+		#if self.mpName not in mpNamesNonBackground:
+			#raise Exception("Calling background subtraction on a background peak")
+		self.data["sbm normalised background corrected all peaks"] = []
+		self.data["background corrected all peaks"] = []
+		cps = self.data["counts normalised to time"]
+		cps_sbm = self.data["peak cps normalised by sbm"]
+
+		bckgrd_cps = background2.data["counts normalised to time"]
+		bckgrd_cps_sbm = background2.data["peak cps normalised by sbm"]
+
+		for i,j in zip(cps, bckgrd_cps):
+			i2 = i - j
+			self.data["background corrected all peaks"].append(i2)
+
+		for i,j in zip(cps_sbm, bckgrd_cps_sbm):
+			i2 = i - j
+			self.data["sbm normalised background corrected all peaks"].append(i2)
+
+
+	def _exponential_correction(self, background1, background2):
 		if self.mpName != "ThO246":
 			raise Exception("Calling exponential background subtraction on a non-ThO246 mass peak")
 		pass
 	# TODO
 
 	@staticmethod
-	def _linear_correction(self):
+	def _linear_correction(self, background1, background2):
 		if self.mpName != "ThO246":
 			raise Exception("Calling linear background subtraction on a non-ThO246 mass peak")
 		pass
 	# TODO
 
 	@staticmethod
-	def _constant_correction(self):
+	def _constant_correction(self, background2):
 		if self.mpName != "ThO246":
 			raise Exception("Calling constant background subtraction on a non-ThO246 mass peak")
 		pass

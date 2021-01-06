@@ -73,8 +73,11 @@ class CrayfishModel():
         run_samples = copy.deepcopy(list(self.samples_by_name.values()))
 
         self.normalise_all_sbm_and_calculate_time_series(run_samples)
+
+
         self.normalise_all_counts_to_cps(run_samples)
         self.normalise_peak_cps_by_sbm(run_samples)
+
 
         equilibrium_standards = self.view.ask_user_for_equilibrium_standards(run_samples, [])
         if equilibrium_standards is None:
@@ -87,17 +90,18 @@ class CrayfishModel():
         background_method = self.view.ask_user_for_background_correction_method()
         if background_method is None:
             return
-
-        self.background_correction(background_method, run_samples)
-        self.standard_line_calculation(run_samples)
-        self.age_calculation(run_samples)
+        print(background_method)
+        self.background_correction(run_samples, background_method)
+        #self.standard_line_calculation(run_samples)
+        # TODO standard line
+        #self.age_calculation(run_samples)
+        # TODO age calculation
 
         # THIS IS ONLY HERE FOR DEVELOPMENT
+        self.view.show_user_sbm_time_series(run_samples)
+        self.view.show_user_cps_time_series(run_samples)
         self.view.show_user_ages(run_samples)
 
-        self.view.show_user_sbm_time_series(run_samples)
-
-        self.view.show_user_cps_time_series(run_samples)
 
     def normalise_all_sbm_and_calculate_time_series(self, samples):
         for sample in samples:
@@ -115,22 +119,24 @@ class CrayfishModel():
             for spot in sample.spots:
                 spot.normalise_peak_cps_by_sbm()
 
-    def background_correction(self, samples, background_method):
+    def background_correction(self, samples, background_method: str):
         for sample in samples:
             for spot in sample.spots:
                 spot.background_correction(background_method, spot.massPeaks[BACKGROUND1], spot.massPeaks[BACKGROUND2])
-
+    """
     def standard_line_calculation(self, samples):
         for sample in samples:
             if sample.is_standard:
                 for spot in sample.spots:
                     spot.standard_line_calculation()
-
+    """
+    """
     def age_calculation(self, samples):
         for sample in samples:
             if not sample.is_standard:
                 for spot in sample.spots:
                     spot.age_calculation()
+    """
 
 class Signals(QObject):
     sample_list_updated = pyqtSignal([list, list])
