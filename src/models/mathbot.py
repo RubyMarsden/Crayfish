@@ -35,7 +35,7 @@ def calculateRelativeErrors(value, absoluteError):
 def errors_in_quadrature(errors):
 	return math.sqrt(sum([error**2 for error in errors]))
 
-def estimateExponential(point1,error1, point2,error2, x):
+def estimateExponential(point1, point2, x):
 	x1,y1 = point1
 	x2,y2 = point2
 	assert y2 < y1
@@ -50,12 +50,7 @@ def estimateExponential(point1,error1, point2,error2, x):
 
 	yEstimatedBackground = a*(math.exp(b*x))
 
-	dfdy1 = (math.exp(b*x)/(x1-x2))*(((a*x)/y1) - (math.exp(-b*x1)*x2))
-	dfdy2 = (math.exp(b*x)/(y2*(x2-x1)))*((a*x) - ((math.exp(-b*x1))*y1*x1))
-
-	yEstimatedBackgroundError = math.sqrt((error1*dfdy1)**2 + (error2*dfdy2)**2)
-
-	return a, b, yEstimatedBackground, yEstimatedBackgroundError
+	return a, b, yEstimatedBackground
 
 def activityRatio(cpsMass1,cpsMass1Error,decayC1, decayC1Error,cpsMass2, cpsMass2Error, decayC2, decayC2Error):
 	#is there a way to make sure that Th232 goes on the bottom?
