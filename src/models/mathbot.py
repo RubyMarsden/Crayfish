@@ -39,10 +39,10 @@ def estimateExponential(point1, point2, x):
 	x1,y1 = point1
 	x2,y2 = point2
 	assert y2 < y1
-	# if there is no additional background from the previous peak then we should use the second background as it is what is used for
-	# all other peaks and it should be random and so doesn't matter where you take it.
+	# if there is no additional background from the previous peak then we should use the second background as it is
+	# what is used for all other peaks and it should be random and so doesn't matter where you take it.
 
-	# for an exponentional curve y = a*exp(bx)
+	# for an exponential curve y = a*exp(bx)
 	if y2 ==0:
 		y2 = 0.000001
 	b = math.log(y2/y1)/(x2-x1)
@@ -53,7 +53,7 @@ def estimateExponential(point1, point2, x):
 	return a, b, yEstimatedBackground
 
 def activityRatio(cpsMass1,cpsMass1Error,decayC1, decayC1Error,cpsMass2, cpsMass2Error, decayC2, decayC2Error):
-	#is there a way to make sure that Th232 goes on the bottom?
+	# is there a way to make sure that Th232 goes on the bottom?
 	activityRatio = (cpsMass1*decayC1)/(cpsMass2*decayC2)
 	activityRatioError = activityRatio*(math.sqrt(((cpsMass1Error/cpsMass1)**2)+((cpsMass2Error/cpsMass2)**2)+((decayC1Error/decayC1)**2)+((decayC2Error/decayC2)**2)))
 	return activityRatio, activityRatioError

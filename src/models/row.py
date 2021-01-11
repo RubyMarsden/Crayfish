@@ -81,10 +81,12 @@ class Row:
     def exponential_correction(self, background1, background2, key_output, key_input):
         if self.mpName != "ThO246":
             raise Exception("Calling exponential background subtraction on a non-ThO246 mass peak")
+
         self.data[key_output] = []
         cps = self.data[key_input]
         bckgrd1_cps = background1.data[key_input]
         bckgrd2_cps = background2.data[key_input]
+
         x1 = background1.massPeakValue
         x2 = background2.massPeakValue
         xThO246 = self.massPeakValue
@@ -101,10 +103,11 @@ class Row:
             else:
                 # NOTE we shift the exponential curve to x1=0 to avoid "a" becoming too large
                 xThO246 = xThO246 - x1
-                a, b, yEstimatedBackground, yEstimatedBackgroundError = estimateExponential((0, y1), (x2 - x1, y2),
+                a, b, yEstimatedBackground = estimateExponential((0, y1), (x2 - x1, y2),
 																							xThO246)
             correctedBackgroundExponentialThO246 = yThO246 - yEstimatedBackground
-		    self.data[key_output].append(correctedBackgroundExponentialThO246)
+
+            self.data[key_output].append(correctedBackgroundExponentialThO246)
 
             if isConstant:
                 self.data["expCorrectionFunction"] = lambda x: y2
