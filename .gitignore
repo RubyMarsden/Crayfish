@@ -5,7 +5,11 @@ __pycache__/
 
 #Not my data
 data/
-tests/
+tests/complete_test.csv
+tests/test.csv
+tests/test_age_output.csv
+tests/test_row_output.csv
+tests/test_row_output_checked.csv
 crayfish_rows.csv
 crayfish_output.csv
 *.csv
