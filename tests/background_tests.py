@@ -34,7 +34,20 @@ class BackgroundCorrectionTest(unittest.TestCase):
 
     def test_constant_background_230(self):
         background1, background2, Th_peak = self.instantiate_mass_peaks_single_data_point()
-        Th_peak.constant_correction(background2), "output_linear", "counts")
+        Th_peak.constant_correction(background2, "output_constant", "counts")
+
+        self.assertEqual(4, Th_peak.data["output_constant"][0])
+
+    def test_constant_background_all_peaks(self):
+        background1, background2, Th_peak = self.instantiate_mass_peaks_single_data_point()
+        background2.data["counts normalised to time"] = [5]
+        background2.data["peak cps normalised by sbm"] = [5]
+        Th_peak.data["counts normalised to time"] = [9]
+        Th_peak.data["peak cps normalised by sbm"] = [9]
+        Th_peak.background_correction_all_peaks(background2)
+
+        self.assertEqual(4, Th_peak.data["background corrected all peaks"][0])
+        self.assertEqual(4, Th_peak.data["sbm normalised background corrected all peaks"][0])
 
 if __name__ == '__main__':
     unittest.main()

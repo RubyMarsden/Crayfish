@@ -51,7 +51,8 @@ class Row:
     def background_correction_230Th(self, background_method, background1, background2):
         if background_method == BackgroundCorrection.EXP:
             self.exponential_correction(background1, background2, "ThO246 exp corrected", "counts normalised to time")
-            self.exponential_correction(background1, background2, "ThO246 exp corrected sbm normalised" ,"peak cps normalised by sbm")
+            self.exponential_correction(background1, background2, "ThO246 exp corrected sbm normalised",
+                                        "peak cps normalised by sbm")
         elif background_method == BackgroundCorrection.LIN:
             self.linear_correction(background1, background2)
         elif background_method == BackgroundCorrection.CONST:
@@ -103,8 +104,7 @@ class Row:
             else:
                 # NOTE we shift the exponential curve to x1=0 to avoid "a" becoming too large
                 xThO246 = xThO246 - x1
-                a, b, yEstimatedBackground = estimateExponential((0, y1), (x2 - x1, y2),
-																							xThO246)
+                a, b, yEstimatedBackground = estimateExponential((0, y1), (x2 - x1, y2), xThO246)
             correctedBackgroundExponentialThO246 = yThO246 - yEstimatedBackground
 
             self.data[key_output].append(correctedBackgroundExponentialThO246)
@@ -142,16 +142,24 @@ class Row:
             self.data[key_output].append(correctedBackgroundLinearThO246)
 
             if isConstant:
-                self.data["expCorrectionFunction"] = lambda x: y2
+                self.data["linearCorrectionFunction"] = lambda x: y2
             else:
-                self.data["expCorrectionFunction"] = lambda x: gradient * x + c
+                self.data["linearCorrectionFunction"] = lambda x: gradient * x + c
 
-    def constant_correction(self, background2):
+    def constant_correction(self, background2, key_output, key_input):
         if self.mpName != "ThO246":
             raise Exception("Calling constant background subtraction on a non-ThO246 mass peak")
-        pass
+        self.data[key_output] = []
+        cps = self.data[key_input]
+        bckgrd2_cps = background2.data[key_input]
 
-    # TODO
+        for i, j in zip(cps, bckgrd2_cps):
+            y2 = j
+            yThO246 = i
+
+            correctedBackgroundLinearThO246 = yThO246 - y2
+            self.data[key_output].append(correctedBackgroundLinearThO246)
+            self.data["constantCorrectionFunction"] = lambda x: y2
 
     ###################
     ### Not used yet###
@@ -165,25 +173,3 @@ class Row:
         cpsMean = mean * MEASUREMENTS_PER_SCAN_PER_MASS_PEAK / countTime
         cpsStDev = stDev * MEASUREMENTS_PER_SCAN_PER_MASS_PEAK / countTime
         self.data[outputKey] = cpsMean, cpsStDev
-
-    def calculateBackgroundSubtractionSBM(self, sbmBackground):
-        sbmMean, sbmStDev = self.data["sbm_cps"]
-        self.data["sbmBackgroundCorrected"] = (sbmMean - sbmBackground, sbmStDev)
-
-    def normalise_to_sbm(self):
-        countsMean, countsStDev = self.data["cps"]
-        sbmMean, sbmStDev = self.data["sbmBackgroundCorrected"]
-        mean = countsMean / sbmMean
-        stDev = mean * math.sqrt(
-            (calculateRelativeErrors(sbmMean, sbmStDev) ** 2) + (calculateRelativeErrors(countsMean, countsStDev) ** 2))
-        self.data["cps"] = mean, stDev
-
-    def subtract_background2(self, background, mpNamesNonBackground):
-        if self.mpName not in mpNamesNonBackground:
-            raise Exception("Calling background subtraction on a background peak")
-
-        backgroundMean, backgroundStDev = background.data["cps"]
-        mean, stDev = self.data["cps"]
-        correctedMean = mean - backgroundMean
-        correctedStDev = math.sqrt((stDev ** 2) + (backgroundStDev ** 2))
-        self.data["cpsBackgroundCorrected"] = correctedMean, correctedStDev
