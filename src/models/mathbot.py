@@ -47,9 +47,8 @@ def estimateExponential(point1, point2, x):
 		y2 = 0.000001
 	b = math.log(y2/y1)/(x2-x1)
 	a = y1*(math.exp(-b*x1))
-
+	print(a, b, x)
 	yEstimatedBackground = a*(math.exp(b*x))
-
 	return a, b, yEstimatedBackground
 
 def activityRatio(cpsMass1,cpsMass1Error,decayC1, decayC1Error,cpsMass2, cpsMass2Error, decayC2, decayC2Error):

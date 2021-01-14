@@ -92,10 +92,7 @@ class Row:
         x2 = background2.massPeakValue
         xThO246 = self.massPeakValue
 
-        for i, j, k in zip(cps, bckgrd1_cps, bckgrd2_cps):
-            y1 = j
-            y2 = k
-            yThO246 = i
+        for yThO246, y1, y2 in zip(cps, bckgrd1_cps, bckgrd2_cps):
 
             isConstant = y2 >= y1
             if isConstant:
@@ -103,8 +100,8 @@ class Row:
 
             else:
                 # NOTE we shift the exponential curve to x1=0 to avoid "a" becoming too large
-                xThO246 = xThO246 - x1
-                a, b, yEstimatedBackground = estimateExponential((0, y1), (x2 - x1, y2), xThO246)
+                xThO246_shifted = xThO246 - x1
+                a, b, yEstimatedBackground = estimateExponential((0, y1), (x2 - x1, y2), xThO246_shifted)
             correctedBackgroundExponentialThO246 = yThO246 - yEstimatedBackground
 
             self.data[key_output].append(correctedBackgroundExponentialThO246)
