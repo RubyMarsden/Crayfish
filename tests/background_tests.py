@@ -40,9 +40,9 @@ class BackgroundCorrectionTest(unittest.TestCase):
     def test_constant_background_all_peaks(self):
         background1, background2, Th_peak = self.instantiate_mass_peaks_single_data_point()
         background2.data[DataKey.COUNTS_PER_SECOND] = [5]
-        background2.data["peak cps normalised by sbm"] = [5]
+        background2.data[DataKey.SBM_NORMALISED] = [5]
         Th_peak.data[DataKey.COUNTS_PER_SECOND] = [9]
-        Th_peak.data["peak cps normalised by sbm"] = [9]
+        Th_peak.data[DataKey.SBM_NORMALISED] = [9]
         Th_peak.background_correction_all_peaks(background2)
 
         self.assertEqual(4, Th_peak.data["background corrected all peaks"][0])

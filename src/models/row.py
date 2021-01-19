@@ -8,6 +8,8 @@ import math
 class DataKey(Enum):
     SBM_STANDARDISED = "sbm standardised"
     COUNTS_PER_SECOND = "counts `per second"
+    SBM_NORMALISED = "cps normalised by sbm"
+    TH230_MASS_PEAK_EXP_BACKGROUND_CORRECTED = "230Th_mass_peak_exp_background_corrected"
 
 # contains the data for a single scan within a single mass peak within a spot
 class Row:
@@ -28,11 +30,7 @@ class Row:
         return self.name
 
     def standardise_sbm_and_subtract_sbm_background(self, sbm_background, count_time):
-        sbm_standardised = []
-        for i in self.rawRows["sbm"]:
-            i2 = i * MEASUREMENTS_PER_SCAN_PER_MASS_PEAK / count_time - sbm_background
-            sbm_standardised.append(i2)
-        self.data[DataKey.SBM_STANDARDISED] = sbm_standardised
+        self.data[DataKey.SBM_STANDARDISED] = [i * MEASUREMENTS_PER_SCAN_PER_MASS_PEAK / count_time - sbm_background for i in self.rawRows["sbm"]]
 
     def get_local_sbm_time_series(self, count_time, start_time):
         points = self.data[DataKey.SBM_STANDARDISED]
@@ -41,22 +39,21 @@ class Row:
         return zip(local_sbm_time_series, points)
 
     def normalise_all_counts_to_cps(self, count_time):
-        cps = []
-        for i in self.rawRows["counts"]:
-            i2 = i * MEASUREMENTS_PER_SCAN_PER_MASS_PEAK / count_time
-            cps.append(i2)
-        self.data[DataKey.COUNTS_PER_SECOND] = cps
+        self.data[DataKey.COUNTS_PER_SECOND] = [i * MEASUREMENTS_PER_SCAN_PER_MASS_PEAK / count_time for i in self.rawRows["counts"]]
 
     def normalise_peak_cps_by_sbm(self):
         cps = self.data[DataKey.COUNTS_PER_SECOND]
         sbm = self.data[DataKey.SBM_STANDARDISED]
-        self.data["peak cps normalised by sbm"] = [i / j for i, j in zip(cps, sbm)]
+        self.data[DataKey.SBM_NORMALISED] = [i / j for i, j in zip(cps, sbm)]
+
+    def calculate_mean_and_st_dev_blocks(self, input_key, output_key):
+        self.data[output_key] = calculateOutlierResistantMeanAndStDev(self.data[input_key], NUMBER_OF_OUTLIERS_ALLOWED)
 
     def background_correction_230Th(self, background_method, background1, background2):
         if background_method == BackgroundCorrection.EXP:
-            self.exponential_correction(background1, background2, "ThO246 exp corrected", DataKey.COUNTS_PER_SECOND)
+            self.exponential_correction(background1, background2, DataKey.TH230_MASS_PEAK_EXP_BACGROUND_CORRECTED, DataKey.COUNTS_PER_SECOND)
             self.exponential_correction(background1, background2, "ThO246 exp corrected sbm normalised",
-                                        "peak cps normalised by sbm")
+                                        DataKey.SBM_NORMALISED)
         elif background_method == BackgroundCorrection.LIN:
             self.linear_correction(background1, background2)
         elif background_method == BackgroundCorrection.CONST:
@@ -67,21 +64,14 @@ class Row:
     def background_correction_all_peaks(self, background2):
         # if self.mpName not in mpNamesNonBackground:
         # raise Exception("Calling background subtraction on a background peak")
-        self.data["sbm normalised background corrected all peaks"] = []
-        self.data["background corrected all peaks"] = []
         cps = self.data[DataKey.COUNTS_PER_SECOND]
-        cps_sbm = self.data["peak cps normalised by sbm"]
+        cps_sbm = self.data[DataKey.SBM_NORMALISED]
 
         bckgrd_cps = background2.data[DataKey.COUNTS_PER_SECOND]
-        bckgrd_cps_sbm = background2.data["peak cps normalised by sbm"]
+        bckgrd_cps_sbm = background2.data[DataKey.SBM_NORMALISED]
 
-        for i, j in zip(cps, bckgrd_cps):
-            i2 = i - j
-            self.data["background corrected all peaks"].append(i2)
-
-        for i, j in zip(cps_sbm, bckgrd_cps_sbm):
-            i2 = i - j
-            self.data["sbm normalised background corrected all peaks"].append(i2)
+        self.data["background corrected all peaks"] = [i-j for i, j in zip(cps, bckgrd_cps)]
+        self.data["sbm normalised background corrected all peaks"] = [i-j for i, j in zip(cps_sbm, bckgrd_cps_sbm)]
 
     def exponential_correction(self, background1, background2, key_output, key_input):
         if self.mpName != "ThO246":
@@ -166,8 +156,7 @@ class Row:
     ### Not used yet###
     ###################
 
-    def calculateMeanAndStDev(self, inputKey, outputKey):
-        self.data[outputKey] = calculateOutlierResistantMeanAndStDev(self.rawRows[inputKey], NUMBER_OF_OUTLIERS_ALLOWED)
+
 
     def calculate_cps_mean_and_st_dev(self, countTime, inputKey, outputKey):
         mean, stDev = self.data[inputKey]

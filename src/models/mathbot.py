@@ -4,18 +4,20 @@ from astropy.stats import biweight_location, biweight_scale
 from sklearn.linear_model import LinearRegression
 import math
 
+
 def calculateOutlierResistantMeanAndStDev(row, numberOfOutliersAllowed):
+	# TODO - deal with sbm normalised values which are v. small - could multiply and divide by biggest sbm value?
 	BIWEIGHT_C_VALUE = 6
 	median = math.ceil(np.median(row))
 	if median <= 100:
 		if median == 0:
 			median = 1
 			# NOTE: unsure if this is the right thing to do, talk to Chris - he seems to think it is ok.
-		rowOutliersRemoved = [k for k in row if 0.05 < poisson.cdf(k,median) < 0.95]
-		if len(rowOutliersRemoved)< len(row) - numberOfOutliersAllowed:
+		row_outliers_removed = [k for k in row if 0.05 < poisson.cdf(k,median) < 0.95]
+		if len(row_outliers_removed)< len(row) - numberOfOutliersAllowed:
 			xBar = np.mean(row)
 		else:
-			xBar  = np.mean(rowOutliersRemoved)
+			xBar  = np.mean(row_outliers_removed)
 		return xBar, math.sqrt(xBar)
 	else:
 		return biweight_location(row, BIWEIGHT_C_VALUE), biweight_scale(row, BIWEIGHT_C_VALUE)

@@ -85,7 +85,7 @@ class AgeDialog(QDialog):
         # self.sample_flag_box.setChecked(current_tree_item.spot.is_flagged)
         #
         # if self.sbm_check_box.isChecked():
-        #     self.plot_cps_graph(current_tree_item.spot.massPeaks, self.axes, "peak cps normalised by sbm")
+        #     self.plot_cps_graph(current_tree_item.spot.massPeaks, self.axes, DataKey.SBM_NORMALISED)
         # else:
         #     self.plot_cps_graph(current_tree_item.spot.massPeaks, self.axes, "counts normalised to time")
         pass

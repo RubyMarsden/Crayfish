@@ -35,6 +35,10 @@ class MassPeak:
 		for row in self.rows:
 			row.normalise_peak_cps_by_sbm()
 
+	def calculateMeanAndStDevForRows(self, input_key, output_key):
+		for row in self.rows:
+			row.calculate_mean_and_st_dev_blocks(input_key, output_key)
+
 	def background_correction_230Th(self, background_method, background1, background2):
 		for row, row_b1, row_b2 in zip(self.rows, background1.rows, background2.rows):
 			row.background_correction_230Th(background_method, row_b1, row_b2)
@@ -47,9 +51,7 @@ class MassPeak:
 	### Not used yet###
 	###################
 
-	def calculateMeanAndStDevForRows(self,inputKey,outputKey):
-		for row in self.rows:
-			row.calculateMeanAndStDev(inputKey,outputKey)
+
 
 	def calculateCpsMeanAndStDevForRows(self, inputKey, outputKey):
 		for row in self.rows:
