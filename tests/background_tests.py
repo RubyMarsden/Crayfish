@@ -1,8 +1,7 @@
 import unittest
 
 from models.mathbot import estimateExponential
-from models.row import Row
-# from models.row import linear_correction, constant_correction, exponential_correction
+from models.row import Row, DataKey
 
 
 class BackgroundCorrectionTest(unittest.TestCase):
@@ -40,9 +39,9 @@ class BackgroundCorrectionTest(unittest.TestCase):
 
     def test_constant_background_all_peaks(self):
         background1, background2, Th_peak = self.instantiate_mass_peaks_single_data_point()
-        background2.data["counts normalised to time"] = [5]
+        background2.data[DataKey.COUNTS_PER_SECOND] = [5]
         background2.data["peak cps normalised by sbm"] = [5]
-        Th_peak.data["counts normalised to time"] = [9]
+        Th_peak.data[DataKey.COUNTS_PER_SECOND] = [9]
         Th_peak.data["peak cps normalised by sbm"] = [9]
         Th_peak.background_correction_all_peaks(background2)
 

@@ -1,8 +1,13 @@
+from enum import Enum
+
 from models.background_method import BackgroundCorrection
 from models.mathbot import *
 from models.settings import *
 import math
 
+class DataKey(Enum):
+    SBM_STANDARDISED = "sbm standardised"
+    COUNTS_PER_SECOND = "counts `per second"
 
 # contains the data for a single scan within a single mass peak within a spot
 class Row:
@@ -22,35 +27,34 @@ class Row:
     def __repr__(self):
         return self.name
 
-    def normalise_sbm_and_subtract_sbm_background(self, sbm_background, count_time):
-        self.data["sbm_normalised"] = []
+    def standardise_sbm_and_subtract_sbm_background(self, sbm_background, count_time):
+        sbm_standardised = []
         for i in self.rawRows["sbm"]:
             i2 = i * MEASUREMENTS_PER_SCAN_PER_MASS_PEAK / count_time - sbm_background
-            self.data["sbm_normalised"].append(i2)
+            sbm_standardised.append(i2)
+        self.data[DataKey.SBM_STANDARDISED] = sbm_standardised
 
     def get_local_sbm_time_series(self, count_time, start_time):
-        points = self.data["sbm_normalised"]
+        points = self.data[DataKey.SBM_STANDARDISED]
         time_per_measurement = count_time / len(points)
         local_sbm_time_series = [start_time + (i + 0.5) * time_per_measurement for i in range(len(points))]
         return zip(local_sbm_time_series, points)
 
     def normalise_all_counts_to_cps(self, count_time):
-        self.data["counts normalised to time"] = []
+        cps = []
         for i in self.rawRows["counts"]:
             i2 = i * MEASUREMENTS_PER_SCAN_PER_MASS_PEAK / count_time
-            self.data["counts normalised to time"].append(i2)
+            cps.append(i2)
+        self.data[DataKey.COUNTS_PER_SECOND] = cps
 
     def normalise_peak_cps_by_sbm(self):
-        self.data["peak cps normalised by sbm"] = []
-        cps = self.data["counts normalised to time"]
-        sbm = self.data["sbm_normalised"]
-        for i, j in zip(cps, sbm):
-            i2 = i / j
-            self.data["peak cps normalised by sbm"].append(i2)
+        cps = self.data[DataKey.COUNTS_PER_SECOND]
+        sbm = self.data[DataKey.SBM_STANDARDISED]
+        self.data["peak cps normalised by sbm"] = [i / j for i, j in zip(cps, sbm)]
 
     def background_correction_230Th(self, background_method, background1, background2):
         if background_method == BackgroundCorrection.EXP:
-            self.exponential_correction(background1, background2, "ThO246 exp corrected", "counts normalised to time")
+            self.exponential_correction(background1, background2, "ThO246 exp corrected", DataKey.COUNTS_PER_SECOND)
             self.exponential_correction(background1, background2, "ThO246 exp corrected sbm normalised",
                                         "peak cps normalised by sbm")
         elif background_method == BackgroundCorrection.LIN:
@@ -65,10 +69,10 @@ class Row:
         # raise Exception("Calling background subtraction on a background peak")
         self.data["sbm normalised background corrected all peaks"] = []
         self.data["background corrected all peaks"] = []
-        cps = self.data["counts normalised to time"]
+        cps = self.data[DataKey.COUNTS_PER_SECOND]
         cps_sbm = self.data["peak cps normalised by sbm"]
 
-        bckgrd_cps = background2.data["counts normalised to time"]
+        bckgrd_cps = background2.data[DataKey.COUNTS_PER_SECOND]
         bckgrd_cps_sbm = background2.data["peak cps normalised by sbm"]
 
         for i, j in zip(cps, bckgrd_cps):

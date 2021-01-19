@@ -5,6 +5,7 @@ from sklearn.linear_model import LinearRegression
 import math
 
 def calculateOutlierResistantMeanAndStDev(row, numberOfOutliersAllowed):
+	BIWEIGHT_C_VALUE = 6
 	median = math.ceil(np.median(row))
 	if median <= 100:
 		if median == 0:
@@ -17,7 +18,7 @@ def calculateOutlierResistantMeanAndStDev(row, numberOfOutliersAllowed):
 			xBar  = np.mean(rowOutliersRemoved)
 		return xBar, math.sqrt(xBar)
 	else:
-		return biweight_location(row,6), biweight_scale(row,6)
+		return biweight_location(row, BIWEIGHT_C_VALUE), biweight_scale(row, BIWEIGHT_C_VALUE)
 
 def calculateErrorWeightedMeanAndStDev(values, errors):
 	inverseErrors = [1/(error**2) for error in errors]

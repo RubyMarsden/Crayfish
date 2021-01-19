@@ -106,7 +106,7 @@ class CrayfishModel():
     def normalise_all_sbm_and_calculate_time_series(self, samples):
         for sample in samples:
             for spot in sample.spots:
-                spot.normalise_sbm_and_subtract_sbm_background()
+                spot.standardise_sbm_and_subtract_sbm_background()
                 spot.calculate_sbm_time_series()
 
     def normalise_all_counts_to_cps(self, samples):
