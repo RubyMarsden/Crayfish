@@ -1,11 +1,27 @@
 import numpy as np
 from scipy.stats import poisson
 from astropy.stats import biweight_location, biweight_scale
+import robustats
 from sklearn.linear_model import LinearRegression
 import math
 
 
 def calculateOutlierResistantMeanAndStDev(row, numberOfOutliersAllowed):
+	medcouple = robustats.medcouple(row)
+	Q1 = np.percentile(row, 25, interpolation='midpoint')
+	Q3 = np.percentile(row, 75, interpolation='midpoint')
+	IQR = Q3-Q1
+
+	if medcouple >0:
+		skew_corrected_outlier_range = (Q1 - 1.5*math.exp(-4*medcouple)*IQR, Q3 +1.5*math.exp(-3*medcouple)*IQR)
+
+	elif medcouple<0:
+		skew_corrected_outlier_range = (Q1 - 1.5*math.exp(-4*medcouple)*IQR, Q3 +1.5*math.exp(-3*medcouple)*IQR)
+
+	elif medcouple == 0:
+		skew_corrected_outlier_range = (Q1 - 1.5*IQR, Q3 +1.5*IQR)
+
+
 	# TODO - deal with sbm normalised values which are v. small - could multiply and divide by biggest sbm value?
 	BIWEIGHT_C_VALUE = 6
 	median = math.ceil(np.median(row))
