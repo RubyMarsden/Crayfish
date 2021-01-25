@@ -97,12 +97,12 @@ def format(v):
 
 def processData(config, spots):
     for spot in spots:
-        spot.calculateMeanAndStDevForRows("counts", "counts")
-        spot.calculateCpsMeanAndStDevForRows("counts", "cps")
+        spot.calculate_outlier_resistant_mean_st_dev_for_rows("counts", "counts")
+        spot.calculate_outlier_resistant_mean_st_dev_for_rows("counts", "cps")
 
         if config.normaliseBySBM:
-            spot.calculateMeanAndStDevForRows("sbm", "sbm")
-            spot.calculateCpsMeanAndStDevForRows("sbm", "sbm_cps")
+            spot.calculate_outlier_resistant_mean_st_dev_for_rows("sbm", "sbm")
+            spot.calculate_outlier_resistant_mean_st_dev_for_rows("sbm", "sbm_cps")
             spot.calculateBackgroundSubtractionSBMForRows()
             spot.normaliseToSBMForRows()
 

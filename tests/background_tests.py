@@ -48,5 +48,6 @@ class BackgroundCorrectionTest(unittest.TestCase):
         self.assertEqual(4, Th_peak.data["background corrected all peaks"][0])
         self.assertEqual(4, Th_peak.data["sbm normalised background corrected all peaks"][0])
 
+
 if __name__ == '__main__':
     unittest.main()

@@ -5,11 +5,16 @@ from models.mathbot import *
 from models.settings import *
 import math
 
+
 class DataKey(Enum):
     SBM_STANDARDISED = "sbm standardised"
     COUNTS_PER_SECOND = "counts `per second"
     SBM_NORMALISED = "cps normalised by sbm"
+    OUTLIER_RESISTANT_MEAN_AND_ST_DEV = "outlier resistant mean and st deviation for cps values"
+    OUTLIER_RESISTANT_MEAN_AND_ST_DEV_SBM_NORMALISED = "outlier resistant mean and st deviation for sbm normalised " \
+                                                       "values "
     TH230_MASS_PEAK_EXP_BACKGROUND_CORRECTED = "230Th_mass_peak_exp_background_corrected"
+
 
 # contains the data for a single scan within a single mass peak within a spot
 class Row:
@@ -51,9 +56,9 @@ class Row:
 
     def background_correction_230Th(self, background_method, background1, background2):
         if background_method == BackgroundCorrection.EXP:
-            self.exponential_correction(background1, background2, DataKey.TH230_MASS_PEAK_EXP_BACGROUND_CORRECTED, DataKey.COUNTS_PER_SECOND)
+            self.exponential_correction(background1, background2, DataKey.TH230_MASS_PEAK_EXP_BACGROUND_CORRECTED, DataKey.OUTLIER_RESISTANT_MEAN_AND_ST_DEV)
             self.exponential_correction(background1, background2, "ThO246 exp corrected sbm normalised",
-                                        DataKey.SBM_NORMALISED)
+                                        DataKey.OUTLIER_RESISTANT_MEAN_AND_ST_DEV_SBM_NORMALISED)
         elif background_method == BackgroundCorrection.LIN:
             self.linear_correction(background1, background2)
         elif background_method == BackgroundCorrection.CONST:
@@ -64,12 +69,12 @@ class Row:
     def background_correction_all_peaks(self, background2):
         # if self.mpName not in mpNamesNonBackground:
         # raise Exception("Calling background subtraction on a background peak")
-        cps = self.data[DataKey.COUNTS_PER_SECOND]
-        cps_sbm = self.data[DataKey.SBM_NORMALISED]
+        cps, uncertainty = self.data[DataKey.OUTLIER_RESISTANT_MEAN_AND_ST_DEV]
+        cps_sbm, uncertainty_sbm = self.data[DataKey.OUTLIER_RESISTANT_MEAN_AND_ST_DEV_SBM_NORMALISED]
 
-        bckgrd_cps = background2.data[DataKey.COUNTS_PER_SECOND]
-        bckgrd_cps_sbm = background2.data[DataKey.SBM_NORMALISED]
-
+        bckgrd_cps, uncertainty_b2 = background2.data[DataKey.OUTLIER_RESISTANT_MEAN_AND_ST_DEV]
+        bckgrd_cps_sbm, uncertainty_b2_sbm = background2.data[DataKey.OUTLIER_RESISTANT_MEAN_AND_ST_DEV_SBM_NORMALISED]
+        # TODO fix so uncertainty is included
         self.data["background corrected all peaks"] = [i-j for i, j in zip(cps, bckgrd_cps)]
         self.data["sbm normalised background corrected all peaks"] = [i-j for i, j in zip(cps_sbm, bckgrd_cps_sbm)]
 

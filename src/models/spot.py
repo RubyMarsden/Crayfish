@@ -85,6 +85,10 @@ class Spot:
 		for massPeak in self.massPeaks.values():
 			massPeak.normalise_peak_cps_by_sbm()
 
+	def calculate_outlier_resistant_mean_st_dev_for_rows(self, inputKey, outputKey):
+		for mp in self.massPeaks.values():
+			mp.calculateCpsMeanAndStDevForRows(inputKey, outputKey)
+
 	# Working on this
 	def background_correction(self, background_method, background1, background2):
 		for massPeak in self.massPeaks.values():
@@ -106,11 +110,9 @@ class Spot:
 
 	def calculateMeanAndStDevForRows(self,inputKey,outputKey):
 		for mp in self.massPeaks.values():
-			mp.calculateMeanAndStDevForRows(inputKey,outputKey)
+			mp.calculate_outlier_resistant_mean_st_dev_for_rows(inputKey, outputKey)
 
-	def calculateCpsMeanAndStDevForRows(self, inputKey, outputKey):
-		for mp in self.massPeaks.values():
-			mp.calculateCpsMeanAndStDevForRows(inputKey, outputKey)
+
 
 	def calculateBackgroundSubtractionSBMForRows(self):
 		for mp in self.massPeaks.values():

@@ -35,7 +35,7 @@ class MassPeak:
 		for row in self.rows:
 			row.normalise_peak_cps_by_sbm()
 
-	def calculateMeanAndStDevForRows(self, input_key, output_key):
+	def calculate_outlier_resistant_mean_st_dev_for_rows(self, input_key, output_key):
 		for row in self.rows:
 			row.calculate_mean_and_st_dev_blocks(input_key, output_key)
 

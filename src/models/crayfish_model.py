@@ -119,6 +119,11 @@ class CrayfishModel():
             for spot in sample.spots:
                 spot.normalise_peak_cps_by_sbm()
 
+    def calculate_outlier_resistant_mean_st_dev_for_row(self, samples):
+        for sample in samples:
+            for spot in sample.spots:
+                spot.calculate_outlier_resistant_mean_st_dev_for_rows()
+
     def background_correction(self, samples, background_method: str):
         for sample in samples:
             for spot in sample.spots:
