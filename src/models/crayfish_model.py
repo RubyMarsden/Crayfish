@@ -3,7 +3,9 @@ import copy
 from PyQt5.QtCore import pyqtSignal, QObject
 from models.sample import Sample
 from models.spot import Spot, BACKGROUND1, BACKGROUND2
+from models.york_regression import bivariate_fit
 import csv
+import numpy as np
 
 
 class CrayfishModel():
@@ -72,14 +74,16 @@ class CrayfishModel():
     def process_samples(self):
         run_samples = copy.deepcopy(list(self.samples_by_name.values()))
 
-        self.normalise_all_sbm_and_calculate_time_series(run_samples)
-
+        self.standardise_all_sbm_and_calculate_time_series(run_samples)
 
         self.normalise_all_counts_to_cps(run_samples)
         self.normalise_peak_cps_by_sbm(run_samples)
-
+        self.calculate_outlier_resistant_mean_st_dev_for_row(run_samples)
 
         equilibrium_standards = self.view.ask_user_for_equilibrium_standards(run_samples, [])
+        for sample in run_samples:
+            if sample in equilibrium_standards:
+                sample.is_standard = True
         if equilibrium_standards is None:
             return
 
@@ -90,10 +94,11 @@ class CrayfishModel():
         background_method = self.view.ask_user_for_background_correction_method()
         if background_method is None:
             return
-        print(background_method)
+
         self.background_correction(run_samples, background_method)
-        #self.standard_line_calculation(run_samples)
-        # TODO standard line
+        self.calculate_activity_ratios(run_samples)
+        self.standard_line_calculation(run_samples)
+
         #self.age_calculation(run_samples)
         # TODO age calculation
 
@@ -102,8 +107,7 @@ class CrayfishModel():
         self.view.show_user_cps_time_series(run_samples)
         self.view.show_user_ages(run_samples)
 
-
-    def normalise_all_sbm_and_calculate_time_series(self, samples):
+    def standardise_all_sbm_and_calculate_time_series(self, samples):
         for sample in samples:
             for spot in sample.spots:
                 spot.standardise_sbm_and_subtract_sbm_background()
@@ -128,13 +132,46 @@ class CrayfishModel():
         for sample in samples:
             for spot in sample.spots:
                 spot.background_correction(background_method, spot.massPeaks[BACKGROUND1], spot.massPeaks[BACKGROUND2])
-    """
+
+    def calculate_activity_ratios(self, samples):
+        for sample in samples:
+            for spot in sample.spots:
+                spot.calculate_activity_ratios()
+
     def standard_line_calculation(self, samples):
+        xs = []
+        ys = []
+        dxs = []
+        dys = []
         for sample in samples:
             if sample.is_standard:
+                print(sample.name)
                 for spot in sample.spots:
-                    spot.standard_line_calculation()
-    """
+                    U238_232Th = spot.data["(238U_232Th)"]
+                    x_list = [i for i,j in U238_232Th]
+                    dx_list = [j for i,j in U238_232Th]
+                    xs.extend(x_list)
+                    dxs.extend(dx_list)
+
+                    Th230_232Th = spot.data["(230Th_232Th)"]
+                    y_list, dy_list = zip(*Th230_232Th)
+                    ys.extend(y_list)
+                    dys.extend(dy_list)
+
+            else:
+                continue
+
+        data_in_xs = np.array(xs)
+        data_in_ys = np.array(ys)
+        data_in_dxs = np.array(dxs)
+        data_in_dys = np.array(dys)
+
+        print(xs, dxs, ys, dys)
+
+        a, b, S, cov_matrix = bivariate_fit(data_in_xs, data_in_ys, data_in_dxs, data_in_dys)
+        print(a, b, S, cov_matrix)
+        return
+
     """
     def age_calculation(self, samples):
         for sample in samples:

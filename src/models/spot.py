@@ -2,6 +2,7 @@ from datetime import datetime
 
 from models.mathbot import *
 from models.mass_peak import MassPeak
+from models.row import DataKey
 from models.settings import *
 
 class Spot:
@@ -47,6 +48,8 @@ class Spot:
 
 		self.count_time_duration = sum([massPeak.count_time for massPeak in self.massPeaks.values()])*self.numberOfScans
 
+		self.errors_by_scan = {}
+
 		self.sbm_time_series = None
 
 		self.is_flagged = False
@@ -65,9 +68,9 @@ class Spot:
 	def __repr__(self):
 		return self.name
 
-	def normalise_sbm_and_subtract_sbm_background(self):
+	def standardise_sbm_and_subtract_sbm_background(self):
 		for massPeak in self.massPeaks.values():
-			massPeak.normalise_sbm_and_subtract_sbm_background(self.sbmBackground)
+			massPeak.standardise_sbm_and_subtract_sbm_background(self.sbmBackground)
 
 	def calculate_sbm_time_series(self):
 		self.sbm_time_series = []
@@ -85,11 +88,10 @@ class Spot:
 		for massPeak in self.massPeaks.values():
 			massPeak.normalise_peak_cps_by_sbm()
 
-	def calculate_outlier_resistant_mean_st_dev_for_rows(self, inputKey, outputKey):
+	def calculate_outlier_resistant_mean_st_dev_for_rows(self):
 		for mp in self.massPeaks.values():
-			mp.calculateCpsMeanAndStDevForRows(inputKey, outputKey)
+			mp.calculate_outlier_resistant_mean_st_dev_for_rows()
 
-	# Working on this
 	def background_correction(self, background_method, background1, background2):
 		for massPeak in self.massPeaks.values():
 			if massPeak.mpName == "ThO246":
@@ -97,9 +99,57 @@ class Spot:
 			elif massPeak.mpName in self.mpNamesNonBackground:
 				massPeak.background_correction_all_peaks(background2)
 
-	###################
-	### Not used yet###
-	###################
+	def calculate_activity_ratios(self):
+		Th230_Th232_activity_ratios = []
+		U238_Th232_activity_ratios = []
+
+		U = self.massPeaks[self.uranium_peak_name]
+		Th230 = self.massPeaks["ThO246"]
+		Th232 = self.massPeaks["ThO248"]
+		for i in range(self.numberOfScans):
+			U_mean, U_stdev = U.rows[i].data[DataKey.BKGRD_CORRECTED]
+			Th230_mean, Th230_stdev = Th230.rows[i].data[DataKey.BKGRD_CORRECTED]
+			Th232_mean, Th232_stdev = Th232.rows[i].data[DataKey.BKGRD_CORRECTED]
+			if U_mean <= 0 or U_stdev < 0 or Th230_mean <= 0 or Th230_stdev < 0 or Th232_mean <= 0 or Th232_stdev < 0:
+				self.errors_by_scan[i] = "Error!"
+				continue
+			self.errors_by_scan[i] = "Data"
+			Th230_Th232_activity, Th230_Th232_activity_uncertainty = activity_ratio(
+				cps_mass_1=Th230_mean,
+				cps_mass_1_uncertainty=Th230_stdev,
+				decay_constant_1=TH230_DECAY_CONSTANT,
+				decay_constant_1_uncertainty=TH230_DECAY_CONSTANT_ERROR,
+				cps_mass_2=Th232_mean,
+				cps_mass_2_uncertainty=Th232_stdev,
+				decay_constant_2=TH232_DECAY_CONSTANT,
+				decay_constant_2_uncertainty=TH232_DECAY_CONSTANT_ERROR
+			)
+
+			if self.uranium_peak_name == "UO254" or "U238":
+				U238_mean = U_mean
+				U238_stdev = U_stdev
+			elif self.uranium_peak_name == "UO251" or "U235":
+				U238_mean = U_mean * U235_U238_RATIO
+				U238_stdev = U_stdev * U235_U238_RATIO
+			else:
+				raise Exception("Don't know what U isotope is used")
+
+			U238_Th232_activity, U238_Th232_activity_uncertainty = activity_ratio(
+				cps_mass_1=U238_mean,
+				cps_mass_1_uncertainty=U238_stdev,
+				decay_constant_1=U238_DECAY_CONSTANT,
+				decay_constant_1_uncertainty=U238_DECAY_CONSTANT_ERROR,
+				cps_mass_2=Th232_mean,
+				cps_mass_2_uncertainty=Th232_stdev,
+				decay_constant_2=TH232_DECAY_CONSTANT,
+				decay_constant_2_uncertainty=TH232_DECAY_CONSTANT_ERROR
+			)
+
+			Th230_Th232_activity_ratios.append((Th230_Th232_activity, Th230_Th232_activity_uncertainty))
+			U238_Th232_activity_ratios.append((U238_Th232_activity, U238_Th232_activity_uncertainty))
+
+		self.data["(230Th_232Th)"] = Th230_Th232_activity_ratios
+		self.data["(238U_232Th)"] = U238_Th232_activity_ratios
 
 	def find_uranium_peak_name(self):
 		for name in self.mpNamesNonBackground:
@@ -108,48 +158,10 @@ class Spot:
 
 		raise Exception("NO UO PEAK FOR SPOT " + self.name)
 
-	def calculateMeanAndStDevForRows(self,inputKey,outputKey):
-		for mp in self.massPeaks.values():
-			mp.calculate_outlier_resistant_mean_st_dev_for_rows(inputKey, outputKey)
-
-
-
-	def calculateBackgroundSubtractionSBMForRows(self):
-		for mp in self.massPeaks.values():
-			mp.calculateBackgroundSubtractionSBMForRows(self.sbmBackground)
-
-	def normaliseToSBMForRows(self):
-		for mp in self.massPeaks.values():
-			mp.normaliseToSBMForRows()
-
-	def subtractBackground2ForRows(self):
-		for mp in self.massPeaks.values():
-			if mp.mpName in self.mpNamesNonBackground:
-				mp.subtractBackground2ForRows(self.massPeaks[BACKGROUND2], self.mpNamesNonBackground)
-
-	def subtract_linear_background_for_rows(self):
-		for mp in self.massPeaks.values():
-			if mp.mpName == "ThO246":
-				mp.subtract_linear_background_for_rows(self.massPeaks[BACKGROUND1],self.massPeaks[BACKGROUND2])
-			elif mp.mpName in self.mpNamesNonBackground:
-				mp.subtractBackground2ForRows(self.massPeaks[BACKGROUND2])
-
-	def subtractExponentialBackgroundForRows(self):
-		for mp in self.massPeaks.values():
-			if mp.mpName == "ThO246":
-				mp.subtractExponentialBackgroundForRows(self.massPeaks[BACKGROUND1],self.massPeaks[BACKGROUND2])
-			elif mp.mpName in self.mpNamesNonBackground:
-				mp.subtractBackground2ForRows(self.massPeaks[BACKGROUND2], self.mpNamesNonBackground)
+	###################
+	### Not used yet###
+	###################
 
 	def calculateErrorWeightedMeanAndStDevForScans(self):
 		for mpName in self.mpNamesNonBackground:
 			self.massPeaks[mpName].calculateErrorWeightedMeanAndStDevForScans()
-
-	def calculateActivityRatio(self):
-		ThO246 = self.massPeaks["ThO246"]
-		ThO248 = self.massPeaks["ThO248"]
-		UO251 = self.massPeaks[self.uranium_peak_name]
-		key = "cpsErrorWeighted"
-		self.data["ThThActivityRatio"]= activityRatio(*ThO246.data[key],TH230_DECAY_CONSTANT,TH230_DECAY_CONSTANT_ERROR, *ThO248.data[key],TH232_DECAY_CONSTANT, TH232_DECAY_CONSTANT_ERROR)
-		self.data["UThActivityRatio"] = activityRatio(*UO251.data[key],U238_DECAY_CONSTANT,U238_DECAY_CONSTANT_ERROR, *ThO248.data[key],TH232_DECAY_CONSTANT, TH232_DECAY_CONSTANT_ERROR)
-

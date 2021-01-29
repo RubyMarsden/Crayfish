@@ -3,6 +3,8 @@ from PyQt5.QtWidgets import QHBoxLayout, QDialog, QPushButton, QWidget, QVBoxLay
     QRadioButton
 from PyQt5.QtCore import Qt
 
+from models.row import DataKey
+
 matplotlib.use('QT5Agg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvas
@@ -112,7 +114,7 @@ class cpsTimeSeriesDialog(QDialog):
         if self.sbm_check_box.isChecked():
             self.plot_cps_graph(current_tree_item.spot.massPeaks, self.axes, DataKey.SBM_NORMALISED)
         else:
-            self.plot_cps_graph(current_tree_item.spot.massPeaks, self.axes, "counts normalised to time")
+            self.plot_cps_graph(current_tree_item.spot.massPeaks, self.axes, DataKey.COUNTS_PER_SECOND)
 
     def on_flag_point_state_changed(self):
         sample = self.sample_tree.tree.currentItem()
@@ -123,7 +125,7 @@ class cpsTimeSeriesDialog(QDialog):
         if self.sbm_check_box.isChecked():
             self.plot_cps_graph(current_tree_item.spot.massPeaks, self.axes, DataKey.SBM_NORMALISED)
         else:
-            self.plot_cps_graph(current_tree_item.spot.massPeaks, self.axes,  "counts normalised to time")
+            self.plot_cps_graph(current_tree_item.spot.massPeaks, self.axes, DataKey.COUNTS_PER_SECOND)
 
 
     def plot_cps_graph(self, mass_peaks, axis, key):
