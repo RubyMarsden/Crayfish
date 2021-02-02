@@ -5,6 +5,7 @@ import statsmodels.stats.stattools as stattools
 # import robustats
 from sklearn.linear_model import LinearRegression
 import math
+from models.settings import TH230_DECAY_CONSTANT, TH230_DECAY_CONSTANT_ERROR
 
 
 def calculate_outlier_resistant_mean_and_st_dev(data, number_of_outliers_allowed):
@@ -84,24 +85,50 @@ def activity_ratio(cps_mass_1, cps_mass_1_uncertainty,
     ])
     return ratio, ratio_uncertainty
 
-
+"""
 # NOT YORK REGRESSION *sigh*
 def weightedRegression(xs, ys, xErrors, yErrors, fitIntercept):
     weights = [1 / math.sqrt(xE ** 2 + yE ** 2) for xE, yE in zip(xErrors, yErrors)]
     xs = np.array(xs).reshape(-1, 1)
     model = LinearRegression(fit_intercept=fitIntercept)
     model.fit(xs, ys, sample_weight=weights)
-    return model.intercept_, model.coef_
+    return model.intercept_, model.coef_    
+"""
 
 
-def ageFromGradient(m, decayC):
-    if 1 - m > 0:
-        age = -math.log(1 - m) / decayC
-        return age
+def calculate_age_from_values(x, dx, y, dy, w, dw, standard_line, standard_line_uncertainty):
+    m = (y - w) / (x - w)
+    print(m)
+    standard_corrected_m = m/standard_line
+    print(standard_corrected_m)
+    c = TH230_DECAY_CONSTANT
+    dc = TH230_DECAY_CONSTANT_ERROR
+    s = 1/standard_line
+    ds = (standard_line_uncertainty/standard_line) * s
+    if 1 - standard_corrected_m > 0:
+        age = -math.log(1 - standard_corrected_m) / c
+
+        # partial differentials of the age
+        delta_a_delta_c = math.log(1 + s * (y - w)/(w - x)) / c**2
+        delta_a_delta_y = s / (c * ((s - 1) * w - s * y + x))
+        delta_a_delta_x = (y - w) * s / (c * ((s - 1) * w - s * y + x))
+        delta_a_delta_w = (x - y) * s / ((w - x) * c * ((s - 1) * w - s * y + x))
+        delta_a_delta_s = (y - w) / (c * ((s - 1) * w - s * y + x))
+
+        uncertainty = math.sqrt(
+            (delta_a_delta_c**2 * dc**2) +
+            (delta_a_delta_w ** 2 * dw ** 2) +
+            (delta_a_delta_y ** 2 * dy ** 2) +
+            (delta_a_delta_x ** 2 * dx ** 2) +
+            (delta_a_delta_s**2 * ds**2)
+        )
+
+        return age, uncertainty
     else:
-        return 0
+        return None, None
 
-def calculateErrorWeightedMeanAndStDev(values, errors):
+
+def calculate_error_weighted_mean_and_st_dev(values, errors):
     inverseErrors = [1 / (error ** 2) for error in errors]
     sigma = sum(inverseErrors)
     weightedMean = (sum([value * inverseError for value, inverseError in zip(values, inverseErrors)])) / sigma

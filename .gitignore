@@ -10,6 +10,8 @@ tests/test.csv
 tests/test_age_output.csv
 tests/test_row_output.csv
 tests/test_row_output_checked.csv
+tests/test_york_regression.xlsx
+tests/random_generator.py
 crayfish_rows.csv
 crayfish_output.csv
 *.csv

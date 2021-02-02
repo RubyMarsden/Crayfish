@@ -56,5 +56,5 @@ class MassPeak:
 		rowData = [row.data["cpsBackgroundCorrected"] for row in self.rows]
 		means = [mean for mean,stDev in rowData]
 		stDevs = [stDev for mean,stDev in rowData]
-		self.data["cpsErrorWeighted"] = calculateErrorWeightedMeanAndStDev(means,stDevs)
+		self.data["cpsErrorWeighted"] = calculate_error_weighted_mean_and_st_dev(means, stDevs)
 		

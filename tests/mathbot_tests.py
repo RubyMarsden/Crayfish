@@ -1,5 +1,6 @@
 import unittest
 
+from models import settings
 from models.mathbot import *
 from models.settings import U238_DECAY_CONSTANT, U238_DECAY_CONSTANT_ERROR, TH232_DECAY_CONSTANT, \
     TH232_DECAY_CONSTANT_ERROR
@@ -139,6 +140,20 @@ class MathbotTests(unittest.TestCase):
                           decay_constant_2=TH232_DECAY_CONSTANT,
                           decay_constant_2_uncertainty=TH232_DECAY_CONSTANT_ERROR
                           )
+
+    #########################
+    ### Age from gradient ###
+    #########################
+
+    def test_age_from_gradient_zero_uncertainty(self):
+        age, uncertainty = calculate_age_from_values(0.5, 0, 1, 0, 0, 0)
+        self.assertEqual(-math.log(0.5) / settings.TH230_DECAY_CONSTANT, age)
+        self.assertEqual(uncertainty, 0)
+
+    def test_age_from_gradient_more_realistic(self):
+        age, uncertainty = calculate_age_from_values(3.02, 0.05, 6.33, 0.16, 0.32, 0.01)
+        self.assertEqual(-math.log(1 - (3.02 - 0.32)/(6.33 - 0.32)) / settings.TH230_DECAY_CONSTANT, age)
+        self.assertAlmostEqual(2459.439109, uncertainty, 6)
 
 
 if __name__ == '__main__':

@@ -111,7 +111,7 @@ def processData(config, spots):
         else:
             spot.subtractBackground2ForRows()
 
-        spot.calculateErrorWeightedMeanAndStDevForScans()
+        spot.calculate_error_weighted_mean_and_st_dev_for_ages()
         spot.calculateActivityRatio()
     return spots
 

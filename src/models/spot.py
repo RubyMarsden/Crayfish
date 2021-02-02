@@ -100,6 +100,7 @@ class Spot:
 				massPeak.background_correction_all_peaks(background2)
 
 	def calculate_activity_ratios(self):
+		# TODO sbm normalisation
 		Th230_Th232_activity_ratios = []
 		U238_Th232_activity_ratios = []
 
@@ -158,10 +159,28 @@ class Spot:
 
 		raise Exception("NO UO PEAK FOR SPOT " + self.name)
 
-	###################
-	### Not used yet###
-	###################
+	def age_calculation(self, WR_value, WR_uncertainty, standard_line, standard_line_uncertainty):
+		ages = []
+		U238_Th232_activity_ratios = self.data["(238U_232Th)"]
+		Th230_Th232_activity_ratios = self.data["(230Th_232Th)"]
 
-	def calculateErrorWeightedMeanAndStDevForScans(self):
-		for mpName in self.mpNamesNonBackground:
-			self.massPeaks[mpName].calculateErrorWeightedMeanAndStDevForScans()
+		for (x, dx), (y, dy) in zip(U238_Th232_activity_ratios, Th230_Th232_activity_ratios):
+			age, uncertainty = calculate_age_from_values(x, dx, y, dy, WR_value, WR_uncertainty, standard_line, standard_line_uncertainty)
+			ages.append((age, uncertainty))
+
+		self.data["ages"] = ages
+
+
+	def calculate_error_weighted_mean_and_st_dev_for_ages(self):
+		ages = []
+		uncertainties = []
+		for (i, j) in self.data["ages"]:
+			if i is None or j is None:
+				continue
+			ages.append(i)
+			uncertainties.append(j)
+
+		age, uncertainty = calculate_error_weighted_mean_and_st_dev(ages, uncertainties)
+
+		self.data["weighted age"] = (age, uncertainty)
+		print(self.name, self.data["weighted age"])

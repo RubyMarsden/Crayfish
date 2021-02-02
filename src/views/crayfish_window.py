@@ -7,6 +7,7 @@ from views.cps_time_series_dialog import cpsTimeSeriesDialog
 from views.samples_overview import SamplesOverview
 from views.sbm_time_series_dialog import SBMTimeSeriesDialog
 from views.standard_selection_dialog import EquilibriumStandardSelectionDialog, AgeStandardSelectionDialog
+from views.whole_rock_activity_input_dialog import WholeRockActivityDialog
 from views.ages_dialog import AgeDialog
 
 
@@ -39,8 +40,10 @@ class CrayfishWindow(QMainWindow):
             return None
 
         sample = dialog.get_selected_samples()[0]
+        # TODO make this input dialog the correct size
         age, ok_pressed = QInputDialog.getDouble(self, "Age standard", "What is the age of sample " + sample.name + " (ka)?",
                                                  0, 0, 500)
+
         if not ok_pressed:
             return None
 
@@ -60,6 +63,10 @@ class CrayfishWindow(QMainWindow):
         if result == QDialog.Accepted:
             return dialog.get_background_correction()
         return None
+
+    def ask_user_for_WR_activity_ratios(self, samples):
+        dialog = WholeRockActivityDialog(samples)
+        result = dialog.exec()
 
     def show_user_ages(self, samples):
         dialog = AgeDialog(samples)
