@@ -184,3 +184,11 @@ class Spot:
 
 		self.data["weighted age"] = (age, uncertainty)
 		print(self.name, self.data["weighted age"])
+
+
+	def calculate_error_weighted_mean_and_st_dev_U_cps(self):
+		U_mp = self.massPeaks[self.find_uranium_peak_name()]
+		means_and_st_devs = [row.data[DataKey.OUTLIER_RES_MEAN_STDEV] for row in U_mp.rows]
+		Us, uncertainties = zip(*means_and_st_devs)
+
+		self.data["U concentration"] = calculate_error_weighted_mean_and_st_dev(Us, uncertainties)

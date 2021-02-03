@@ -1,7 +1,10 @@
 import copy
 
 from PyQt5.QtCore import pyqtSignal, QObject
+
+from models.row import DataKey
 from models.sample import Sample
+from models.settings import NONBACKGROUND
 from models.spot import Spot, BACKGROUND1, BACKGROUND2
 from models.york_regression import bivariate_fit
 import csv
@@ -73,6 +76,9 @@ class CrayfishModel():
     ## Processing ##
     ################
     def process_samples(self):
+        self.standard_line = None
+        self.standard_line_uncertainty = None
+        self.MSWD = None
         run_samples = copy.deepcopy(list(self.samples_by_name.values()))
         # while in development
 
@@ -106,14 +112,16 @@ class CrayfishModel():
 
         self.background_correction(run_samples, background_method)
         self.calculate_activity_ratios(run_samples)
-        standard_line, standard_line_uncertainty = self.standard_line_calculation(run_samples)
+        self.standard_line, self.standard_line_uncertainty, self.MSWD = self.standard_line_calculation(run_samples)
 
         # self.view.show_user_standard_line(run_samples)
 
-        self.age_calculation(run_samples, standard_line, standard_line_uncertainty)
+        self.age_calculation(run_samples, self.standard_line, self.standard_line_uncertainty)
+        self.get_U_mean(run_samples)
 
         self.view.show_user_ages(run_samples)
         self.export_results(run_samples, "output")
+        self.export_test_csv(run_samples)
 
     def standardise_all_sbm_and_calculate_time_series(self, samples):
         for sample in samples:
@@ -169,26 +177,25 @@ class CrayfishModel():
             else:
                 continue
             # Fixing through the 0,0 point
-            # TODO should we be fixing through the 0,0 point?
-            xs.append(0), dxs.append(0.01), ys.append(0), dys.append(0.01)
+            xs.append(0), dxs.append(0.00001), ys.append(0), dys.append(0.00001)
 
         data_in_xs = np.array(xs)
         data_in_ys = np.array(ys)
         data_in_dxs = np.array(dxs)
         data_in_dys = np.array(dys)
 
-        print(xs, dxs, ys, dys)
-
         a, b, S, cov_matrix = bivariate_fit(data_in_xs, data_in_ys, data_in_dxs, data_in_dys)
         print(a, b, S, cov_matrix)
         # From York 2004 - This quantity,S = SUM(Wi(Yi-bXi-a)^2, is the same one minimized in the least-squares
         # formulation of the fitting problem.4 If n points are being fitted, the expected value of S has a x^2
-        # distribution for n-2 degrees of freedom, so that the expected value of S/(n-2) is unity.
-        print(S / (len(xs) - 2))
+        # distribution for n-2 degrees of freedom, so that the expected value of S/(n-2) is unity. Here - as we've taken
+        # away a degree of freedom by fixing through x, y = 0, 0 S/(n-3) is used instead.
+        print(S / (len(xs) - 3))
 
         standard_line = b
         standard_line_uncertainty = math.sqrt(cov_matrix[0][0])
-        return standard_line, standard_line_uncertainty
+        MSWD = S / (len(xs) - 3)
+        return standard_line, standard_line_uncertainty, MSWD
 
     def age_calculation(self, samples, standard_line, standard_line_uncertainty):
         for sample in samples:
@@ -202,6 +209,11 @@ class CrayfishModel():
                     standard_line_uncertainty
                 )
                 spot.calculate_error_weighted_mean_and_st_dev_for_ages()
+
+    def get_U_mean(self, samples):
+        for sample in samples:
+            for spot in sample.spots:
+                spot.calculate_error_weighted_mean_and_st_dev_U_cps()
 
     def manual_whole_rock_values(self, samples):
         for sample in samples:
@@ -229,21 +241,92 @@ class CrayfishModel():
     ################
 
     def export_results(self, samples, filename):
+        non_standard_samples = [sample for sample in samples if not sample.is_standard]
+        headers = self.get_export_headers(non_standard_samples)
         with open(filename + '.csv', 'w', newline='') as csvfile:
             writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-            writer.writerow(["sample name", "WR", "uncertainty", "age", "uncertainty"])
-            for sample in samples:
-                if sample.is_standard:
-                    continue
+            writer.writerow(headers)
+            for sample in non_standard_samples:
                 for spot in sample.spots:
-                    row = [spot.name,
-                           sample.WR_activity_ratio,
-                           sample.WR_activity_ratio_uncertainty,
-                           spot.data["weighted age"][0],
-                           spot.data["weighted age"][1]
-                           ]
-                    row = [str(r) for r in row]
-                    writer.writerow(row)
+                    scan_row = []
+                    for age, uncertainty in spot.data["ages"]:
+                        scan_row.append(age)
+                        scan_row.append(uncertainty)
+
+                    fixed_row = [spot.name,
+                                 sample.WR_activity_ratio,
+                                 sample.WR_activity_ratio_uncertainty,
+                                 self.standard_line,
+                                 self.standard_line_uncertainty,
+                                 self.MSWD,
+                                 spot.data["weighted age"][0],
+                                 spot.data["weighted age"][1],
+                                 spot.data["U concentration"][0],
+                                 spot.data["U concentration"][1]
+                                 ]
+                    write_row = fixed_row + scan_row
+                    write_row = [str(r) for r in write_row]
+                    writer.writerow(write_row)
+
+    def get_export_headers(self, samples):
+        fixed_headers = [
+            "sample-spot name",
+            "WR",
+            "uncertainty",
+            "standard line gradient",
+            "uncertainty",
+            "MSWD",
+            "weighted age",
+            "uncertainty",
+            "Weighted U cps",
+            "uncertainty"
+        ]
+        max_number_of_scans = max([spot.numberOfScans for sample in samples for spot in sample.spots])
+        scan_headers = []
+        for i in range(max_number_of_scans):
+            scan_header = f"Scan {i +1}"
+            uncertainty_header = f"Scan {i + 1} uncertainty"
+            scan_headers.append(scan_header)
+            scan_headers.append(uncertainty_header)
+
+        return fixed_headers + scan_headers
+
+    def export_test_csv(self, samples):
+        test_sample = [sample for sample in samples if sample.name == "test"]
+        headers = []
+
+        with open("test output 03022021" + '.csv', 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+            writer.writerow(headers)
+            for sample in test_sample:
+                for spot in sample.spots:
+                    activity_row = []
+                    for value, uncertainty in spot.data["(230Th_232Th)"]:
+                        activity_row.append(value)
+                        activity_row.append(uncertainty)
+                    for value, uncertainty in spot.data["(238U_232Th)"]:
+                        activity_row.append(value)
+                        activity_row.append(uncertainty)
+                    for mp in spot.massPeaks.values():
+                        for row in mp.rows:
+                            fixed_row = [spot.name, mp.name]
+                            cps_row = []
+                            for i in row.data[DataKey.COUNTS_PER_SECOND]:
+                                cps_row.append(i)
+
+                            outlier_res_mean, outlier_res_stdev = row.data[DataKey.OUTLIER_RES_MEAN_STDEV]
+                            if mp.name in NONBACKGROUND:
+                                background_corr, stdev = row.data[DataKey.BKGRD_CORRECTED]
+                            else:
+                                background_corr, stdev = None, None
+
+                            data_row = [outlier_res_mean, outlier_res_stdev, background_corr, stdev]
+
+                            write_row = fixed_row + cps_row + data_row + activity_row
+
+                            write_row = [str(r) for r in write_row]
+                            writer.writerow(write_row)
+
 
 
 class Signals(QObject):
