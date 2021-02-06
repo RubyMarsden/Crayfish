@@ -2,7 +2,8 @@ import copy
 
 from PyQt5.QtCore import pyqtSignal, QObject
 
-from models.row import DataKey
+from models.configuration import Configuration
+from models.data_key import DataKey
 from models.sample import Sample
 from models.settings import NONBACKGROUND
 from models.spot import Spot, BACKGROUND1, BACKGROUND2
@@ -18,6 +19,7 @@ class CrayfishModel():
         self.imported_files = []
         self.signals = Signals()
         self.view = None
+        self.data = {}
 
     def set_view(self, view):
         self.view = view
@@ -76,52 +78,62 @@ class CrayfishModel():
     ## Processing ##
     ################
     def process_samples(self):
-        self.standard_line = None
-        self.standard_line_uncertainty = None
-        self.MSWD = None
-        run_samples = copy.deepcopy(list(self.samples_by_name.values()))
-        # while in development
+        configuration_sbm = Configuration(normalise_by_sbm=True)
+        configuration_non_sbm = Configuration(normalise_by_sbm=False)
+        configurations = [configuration_sbm, configuration_non_sbm]
 
-        equilibrium_standards = self.view.ask_user_for_equilibrium_standards(run_samples, [])
-        for sample in run_samples:
-            if sample in equilibrium_standards:
-                sample.is_standard = True
+        samples = self.samples_by_name.values()
+        self.setup_new_calculation(configurations, samples)
+
+        equilibrium_standards = self.view.ask_user_for_equilibrium_standards(samples, [])
         if equilibrium_standards is None:
             return
+        for sample in samples:
+            if sample in equilibrium_standards:
+                sample.is_standard = True
 
-        age_standard_info = self.view.ask_user_for_age_standard(run_samples, equilibrium_standards)
+        age_standard_info = self.view.ask_user_for_age_standard(samples, equilibrium_standards)
         if age_standard_info is None:
             return
 
-        self.manual_whole_rock_values(run_samples)
-        self.view.ask_user_for_WR_activity_ratios(run_samples)
+        self.manual_whole_rock_values(samples)
+        self.view.ask_user_for_WR_activity_ratios(samples)
 
-        self.standardise_all_sbm_and_calculate_time_series(run_samples)
+        self.standardise_all_sbm_and_calculate_time_series(samples)
 
-        self.view.show_user_sbm_time_series(run_samples)
+        self.view.show_user_sbm_time_series(samples)
 
-        self.normalise_all_counts_to_cps(run_samples)
-        self.normalise_peak_cps_by_sbm(run_samples)
-        self.calculate_outlier_resistant_mean_st_dev_for_row(run_samples)
+        for config in configurations:
+            self.normalise_all_counts_to_cps(config, samples)
+            self.calculate_outlier_resistant_mean_st_dev_for_row(config, samples)
 
-        self.view.show_user_cps_time_series(run_samples)
+        self.view.show_user_cps_time_series(configurations, samples)
 
         background_method = self.view.ask_user_for_background_correction_method()
         if background_method is None:
             return
 
-        self.background_correction(run_samples, background_method)
-        self.calculate_activity_ratios(run_samples)
-        self.standard_line, self.standard_line_uncertainty, self.MSWD = self.standard_line_calculation(run_samples)
+        for config in configurations:
+            self.background_correction(config, samples, background_method)
+            self.calculate_activity_ratios(config, samples)
+            self.standard_line_calculation(config, samples)
+            self.calculate_ages_and_weighted_mean_age(config, samples)
+            self.get_U_mean(config, samples)
 
-        # self.view.show_user_standard_line(run_samples)
+        self.view.show_user_standard_line(samples, configurations)
+        self.view.show_user_ages(samples, configurations)
 
-        self.age_calculation(run_samples, self.standard_line, self.standard_line_uncertainty)
-        self.get_U_mean(run_samples)
+        for config in configurations:
+            self.export_results(config, samples, "output")
+            self.export_test_csv(config, samples)
 
-        self.view.show_user_ages(run_samples)
-        self.export_results(run_samples, "output")
-        self.export_test_csv(run_samples)
+    def setup_new_calculation(self, configurations, samples):
+        self.data = {}
+        for config in configurations:
+            self.data[config] = {}
+        for sample in samples:
+            for spot in sample.spots:
+                spot.setup_new_calculation(configurations)
 
     def standardise_all_sbm_and_calculate_time_series(self, samples):
         for sample in samples:
@@ -129,53 +141,45 @@ class CrayfishModel():
                 spot.standardise_sbm_and_subtract_sbm_background()
                 spot.calculate_sbm_time_series()
 
-    def normalise_all_counts_to_cps(self, samples):
+    def normalise_all_counts_to_cps(self, config, samples):
         for sample in samples:
             for spot in sample.spots:
-                spot.normalise_all_counts_to_cps()
+                spot.normalise_all_counts_to_cps(config)
 
-    def normalise_peak_cps_by_sbm(self, samples):
+    def calculate_outlier_resistant_mean_st_dev_for_row(self, config, samples):
         for sample in samples:
             for spot in sample.spots:
-                spot.normalise_peak_cps_by_sbm()
+                spot.calculate_outlier_resistant_mean_st_dev_for_rows(config)
 
-    def calculate_outlier_resistant_mean_st_dev_for_row(self, samples):
+    def background_correction(self, config, samples, background_method: str):
         for sample in samples:
             for spot in sample.spots:
-                spot.calculate_outlier_resistant_mean_st_dev_for_rows()
+                spot.background_correction(config, background_method, spot.massPeaks[BACKGROUND1], spot.massPeaks[BACKGROUND2])
 
-    def background_correction(self, samples, background_method: str):
+    def calculate_activity_ratios(self, config, samples):
         for sample in samples:
             for spot in sample.spots:
-                spot.background_correction(background_method, spot.massPeaks[BACKGROUND1], spot.massPeaks[BACKGROUND2])
+                spot.calculate_activity_ratios(config)
 
-    def calculate_activity_ratios(self, samples):
-        for sample in samples:
-            for spot in sample.spots:
-                spot.calculate_activity_ratios()
-
-    def standard_line_calculation(self, samples):
+    def standard_line_calculation(self, config, samples):
         xs = []
         ys = []
         dxs = []
         dys = []
         for sample in samples:
-            if sample.is_standard:
-                print(sample.name)
-                for spot in sample.spots:
-                    U238_232Th = spot.data["(238U_232Th)"]
-                    x_list = [i for i, j in U238_232Th]
-                    dx_list = [j for i, j in U238_232Th]
-                    xs.extend(x_list)
-                    dxs.extend(dx_list)
-
-                    Th230_232Th = spot.data["(230Th_232Th)"]
-                    y_list, dy_list = zip(*Th230_232Th)
-                    ys.extend(y_list)
-                    dys.extend(dy_list)
-
-            else:
+            if not sample.is_standard:
                 continue
+            for spot in sample.spots:
+                activity_ratios = spot.data[config][DataKey.ACTIVITY_RATIOS]
+                for ratio in activity_ratios:
+                    if isinstance(ratio, str):
+                        continue
+                    (x, dx), (y, dy) = ratio
+                    xs.append(x)
+                    dxs.append(dx)
+                    ys.append(y)
+                    dys.append(dy)
+
             # Fixing through the 0,0 point
             xs.append(0), dxs.append(0.00001), ys.append(0), dys.append(0.00001)
 
@@ -185,35 +189,36 @@ class CrayfishModel():
         data_in_dys = np.array(dys)
 
         a, b, S, cov_matrix = bivariate_fit(data_in_xs, data_in_ys, data_in_dxs, data_in_dys)
-        print(a, b, S, cov_matrix)
+
         # From York 2004 - This quantity,S = SUM(Wi(Yi-bXi-a)^2, is the same one minimized in the least-squares
         # formulation of the fitting problem.4 If n points are being fitted, the expected value of S has a x^2
         # distribution for n-2 degrees of freedom, so that the expected value of S/(n-2) is unity. Here - as we've taken
         # away a degree of freedom by fixing through x, y = 0, 0 S/(n-3) is used instead.
-        print(S / (len(xs) - 3))
-
-        standard_line = b
-        standard_line_uncertainty = math.sqrt(cov_matrix[0][0])
         MSWD = S / (len(xs) - 3)
-        return standard_line, standard_line_uncertainty, MSWD
+        standard_line_uncertainty = math.sqrt(cov_matrix[0][0])
 
-    def age_calculation(self, samples, standard_line, standard_line_uncertainty):
+        self.data[config][DataKey.STANDARD_LINE_GRADIENT] = b, standard_line_uncertainty
+        self.data[config][DataKey.STANDARD_LINE_MSWD] = MSWD
+
+    def calculate_ages_and_weighted_mean_age(self, config, samples):
+        gradient, gradient_uncertainty = self.data[config][DataKey.STANDARD_LINE_GRADIENT]
         for sample in samples:
             if sample.is_standard:
                 continue
             for spot in sample.spots:
-                spot.age_calculation(
+                spot.calculate_age_per_scan(
+                    config,
                     sample.WR_activity_ratio,
                     sample.WR_activity_ratio_uncertainty,
-                    standard_line,
-                    standard_line_uncertainty
+                    gradient,
+                    gradient_uncertainty
                 )
-                spot.calculate_error_weighted_mean_and_st_dev_for_ages()
+                spot.calculate_error_weighted_mean_and_st_dev_for_ages(config)
 
-    def get_U_mean(self, samples):
+    def get_U_mean(self, config, samples):
         for sample in samples:
             for spot in sample.spots:
-                spot.calculate_error_weighted_mean_and_st_dev_U_cps()
+                spot.calculate_error_weighted_mean_and_st_dev_U_cps(config)
 
     def manual_whole_rock_values(self, samples):
         for sample in samples:
@@ -240,29 +245,34 @@ class CrayfishModel():
     ## Exporting ###
     ################
 
-    def export_results(self, samples, filename):
+    def export_results(self, config, samples, filename):
         non_standard_samples = [sample for sample in samples if not sample.is_standard]
         headers = self.get_export_headers(non_standard_samples)
-        with open(filename + '.csv', 'w', newline='') as csvfile:
+        with open(filename + " " + str(config) + '.csv', 'w', newline='') as csvfile:
             writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
             writer.writerow(headers)
             for sample in non_standard_samples:
                 for spot in sample.spots:
                     scan_row = []
-                    for age, uncertainty in spot.data["ages"]:
-                        scan_row.append(age)
-                        scan_row.append(uncertainty)
+                    for result in spot.data[config][DataKey.AGES]:
+                        if isinstance(result, str):
+                            scan_row.append(result)
+                            scan_row.append("")
+                        else:
+                            age, uncertainty = result
+                            scan_row.append(age)
+                            scan_row.append(uncertainty)
 
                     fixed_row = [spot.name,
                                  sample.WR_activity_ratio,
                                  sample.WR_activity_ratio_uncertainty,
-                                 self.standard_line,
-                                 self.standard_line_uncertainty,
-                                 self.MSWD,
-                                 spot.data["weighted age"][0],
-                                 spot.data["weighted age"][1],
-                                 spot.data["U concentration"][0],
-                                 spot.data["U concentration"][1]
+                                 self.data[config][DataKey.STANDARD_LINE_GRADIENT][0],
+                                 self.data[config][DataKey.STANDARD_LINE_GRADIENT][1],
+                                 self.data[config][DataKey.STANDARD_LINE_MSWD],
+                                 spot.data[config][DataKey.WEIGHTED_AGE][0],
+                                 spot.data[config][DataKey.WEIGHTED_AGE][1],
+                                 spot.data[config][DataKey.U_CONCENTRATION][0],
+                                 spot.data[config][DataKey.U_CONCENTRATION][1]
                                  ]
                     write_row = fixed_row + scan_row
                     write_row = [str(r) for r in write_row]
@@ -291,32 +301,29 @@ class CrayfishModel():
 
         return fixed_headers + scan_headers
 
-    def export_test_csv(self, samples):
+    def export_test_csv(self, config, samples):
         test_sample = [sample for sample in samples if sample.name == "test"]
         headers = []
 
-        with open("test output 03022021" + '.csv', 'w', newline='') as csvfile:
+        with open(f"test output {config}" + '.csv', 'w', newline='') as csvfile:
             writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
             writer.writerow(headers)
             for sample in test_sample:
                 for spot in sample.spots:
                     activity_row = []
-                    for value, uncertainty in spot.data["(230Th_232Th)"]:
-                        activity_row.append(value)
-                        activity_row.append(uncertainty)
-                    for value, uncertainty in spot.data["(238U_232Th)"]:
+                    for value, uncertainty in spot.data[config][DataKey.ACTIVITY_RATIOS]:
                         activity_row.append(value)
                         activity_row.append(uncertainty)
                     for mp in spot.massPeaks.values():
                         for row in mp.rows:
                             fixed_row = [spot.name, mp.name]
                             cps_row = []
-                            for i in row.data[DataKey.COUNTS_PER_SECOND]:
+                            for i in row.data[config][DataKey.CPS]:
                                 cps_row.append(i)
 
-                            outlier_res_mean, outlier_res_stdev = row.data[DataKey.OUTLIER_RES_MEAN_STDEV]
+                            outlier_res_mean, outlier_res_stdev = row.data[config][DataKey.OUTLIER_RES_MEAN_STDEV]
                             if mp.name in NONBACKGROUND:
-                                background_corr, stdev = row.data[DataKey.BKGRD_CORRECTED]
+                                background_corr, stdev = row.data[config][DataKey.BKGRD_CORRECTED]
                             else:
                                 background_corr, stdev = None, None
 
@@ -326,7 +333,6 @@ class CrayfishModel():
 
                             write_row = [str(r) for r in write_row]
                             writer.writerow(write_row)
-
 
 
 class Signals(QObject):

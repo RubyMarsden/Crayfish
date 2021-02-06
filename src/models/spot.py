@@ -2,7 +2,7 @@ from datetime import datetime
 
 from models.mathbot import *
 from models.mass_peak import MassPeak
-from models.row import DataKey
+from models.data_key import DataKey
 from models.settings import *
 
 class Spot:
@@ -54,8 +54,17 @@ class Spot:
 
 		self.is_flagged = False
 
+	def setup_new_calculation(self, configurations):
+		self.data = {}
+		for config in configurations:
+			self.data[config] = {}
+		for mp in self.massPeaks.values():
+			for row in mp.rows:
+				row.setup_new_calculation(configurations)
+
 	def _parse_datetime(self, date_str, time_str):
-		day, month, year = [int(i) for i in date_str.split("/")]
+		date = self._parse_date(date_str)
+
 		split_time = [int(i) for i in time_str.split(":")]
 		if len(split_time) == 2:
 			hour, minute = split_time
@@ -63,7 +72,15 @@ class Spot:
 		else:
 			hour, minute, second = split_time
 
-		return datetime(year, month, day, hour, minute, second)
+		return datetime(date.year, date.month, date.day, hour, minute, second)
+
+	def _parse_date(self, date_str):
+		for fmt in ('%Y-%m-%d,', '%d/%m/%Y'):
+			try:
+				return datetime.strptime(date_str, fmt)
+			except ValueError:
+				pass
+		raise ValueError(f'no valid date format found for {date_str}')
 
 	def __repr__(self):
 		return self.name
@@ -80,41 +97,46 @@ class Spot:
 				self.sbm_time_series.extend(massPeak.get_sbm_time_series(i, current_time))
 				current_time += massPeak.count_time
 
-	def normalise_all_counts_to_cps(self):
+	def normalise_all_counts_to_cps(self, config):
 		for massPeak in self.massPeaks.values():
-			massPeak.normalise_all_counts_to_cps()
+			massPeak.normalise_all_counts_to_cps(config)
 
-	def normalise_peak_cps_by_sbm(self):
-		for massPeak in self.massPeaks.values():
-			massPeak.normalise_peak_cps_by_sbm()
-
-	def calculate_outlier_resistant_mean_st_dev_for_rows(self):
+	def calculate_outlier_resistant_mean_st_dev_for_rows(self, config):
 		for mp in self.massPeaks.values():
-			mp.calculate_outlier_resistant_mean_st_dev_for_rows()
+			mp.calculate_outlier_resistant_mean_st_dev_for_rows(config)
 
-	def background_correction(self, background_method, background1, background2):
+	def background_correction(self, config, background_method, background1, background2):
 		for massPeak in self.massPeaks.values():
 			if massPeak.mpName == "ThO246":
-				massPeak.background_correction_230Th(background_method, background1, background2)
+				massPeak.background_correction_230Th(config, background_method, background1, background2)
 			elif massPeak.mpName in self.mpNamesNonBackground:
-				massPeak.background_correction_all_peaks(background2)
+				massPeak.background_correction_all_peaks(config, background2)
 
-	def calculate_activity_ratios(self):
+	def calculate_activity_ratios(self, config):
 		# TODO sbm normalisation
-		Th230_Th232_activity_ratios = []
-		U238_Th232_activity_ratios = []
+		activity_ratios = []
 
 		U = self.massPeaks[self.uranium_peak_name]
 		Th230 = self.massPeaks["ThO246"]
 		Th232 = self.massPeaks["ThO248"]
 		for i in range(self.numberOfScans):
-			U_mean, U_stdev = U.rows[i].data[DataKey.BKGRD_CORRECTED]
-			Th230_mean, Th230_stdev = Th230.rows[i].data[DataKey.BKGRD_CORRECTED]
-			Th232_mean, Th232_stdev = Th232.rows[i].data[DataKey.BKGRD_CORRECTED]
-			if U_mean <= 0 or U_stdev < 0 or Th230_mean <= 0 or Th230_stdev < 0 or Th232_mean <= 0 or Th232_stdev < 0:
-				self.errors_by_scan[i] = "Error!"
+			U_mean, U_stdev = U.rows[i].data[config][DataKey.BKGRD_CORRECTED]
+			Th230_mean, Th230_stdev = Th230.rows[i].data[config][DataKey.BKGRD_CORRECTED]
+			Th232_mean, Th232_stdev = Th232.rows[i].data[config][DataKey.BKGRD_CORRECTED]
+			if U_mean <= 0:
+				error_peak = U
+			elif Th232_mean <= 0:
+				error_peak = Th232
+			elif Th230_mean <= 0:
+				error_peak = Th230
+			else:
+				error_peak = None
+
+			if error_peak is not None:
+				error = f"Error! {error_peak.mpName} < background correction"
+				activity_ratios.append(error)
 				continue
-			self.errors_by_scan[i] = "Data"
+
 			Th230_Th232_activity, Th230_Th232_activity_uncertainty = activity_ratio(
 				cps_mass_1=Th230_mean,
 				cps_mass_1_uncertainty=Th230_stdev,
@@ -126,10 +148,10 @@ class Spot:
 				decay_constant_2_uncertainty=TH232_DECAY_CONSTANT_ERROR
 			)
 
-			if self.uranium_peak_name == "UO254" or "U238":
+			if self.uranium_peak_name in ["UO254", "U238"]:
 				U238_mean = U_mean
 				U238_stdev = U_stdev
-			elif self.uranium_peak_name == "UO251" or "U235":
+			elif self.uranium_peak_name in ["UO251", "U235"]:
 				U238_mean = U_mean * U235_U238_RATIO
 				U238_stdev = U_stdev * U235_U238_RATIO
 			else:
@@ -146,11 +168,12 @@ class Spot:
 				decay_constant_2_uncertainty=TH232_DECAY_CONSTANT_ERROR
 			)
 
-			Th230_Th232_activity_ratios.append((Th230_Th232_activity, Th230_Th232_activity_uncertainty))
-			U238_Th232_activity_ratios.append((U238_Th232_activity, U238_Th232_activity_uncertainty))
+			activity_ratios.append((
+				(U238_Th232_activity, U238_Th232_activity_uncertainty),
+				(Th230_Th232_activity, Th230_Th232_activity_uncertainty)
+			))
 
-		self.data["(230Th_232Th)"] = Th230_Th232_activity_ratios
-		self.data["(238U_232Th)"] = U238_Th232_activity_ratios
+		self.data[config][DataKey.ACTIVITY_RATIOS] = activity_ratios
 
 	def find_uranium_peak_name(self):
 		for name in self.mpNamesNonBackground:
@@ -159,36 +182,32 @@ class Spot:
 
 		raise Exception("NO UO PEAK FOR SPOT " + self.name)
 
-	def age_calculation(self, WR_value, WR_uncertainty, standard_line, standard_line_uncertainty):
+	def calculate_age_per_scan(self, config, WR_value, WR_uncertainty, standard_line, standard_line_uncertainty):
 		ages = []
-		U238_Th232_activity_ratios = self.data["(238U_232Th)"]
-		Th230_Th232_activity_ratios = self.data["(230Th_232Th)"]
+		activity_ratios = self.data[config][DataKey.ACTIVITY_RATIOS]
 
-		for (x, dx), (y, dy) in zip(U238_Th232_activity_ratios, Th230_Th232_activity_ratios):
-			age, uncertainty = calculate_age_from_values(x, dx, y, dy, WR_value, WR_uncertainty, standard_line, standard_line_uncertainty)
-			ages.append((age, uncertainty))
+		for ratio in activity_ratios:
+			if isinstance(ratio, str):
+				result = ratio
+			else:
+				(x, dx), (y, dy) = ratio
+				result = calculate_age_from_values(x, dx, y, dy, WR_value, WR_uncertainty, standard_line, standard_line_uncertainty)
+			ages.append(result)
 
-		self.data["ages"] = ages
+		self.data[config][DataKey.AGES] = ages
 
+	def calculate_error_weighted_mean_and_st_dev_for_ages(self, config):
+		data = [x for x in self.data[config][DataKey.AGES] if not isinstance(x, str)]
+		if len(data) == 0:
+			self.data[config][DataKey.WEIGHTED_AGE] = ("Error! No ages to take weighted mean from.", "")
+		else:
+			ages, uncertainties = zip(*data)
+			age, uncertainty = calculate_error_weighted_mean_and_st_dev(ages, uncertainties)
+			self.data[config][DataKey.WEIGHTED_AGE] = (age, uncertainty)
 
-	def calculate_error_weighted_mean_and_st_dev_for_ages(self):
-		ages = []
-		uncertainties = []
-		for (i, j) in self.data["ages"]:
-			if i is None or j is None:
-				continue
-			ages.append(i)
-			uncertainties.append(j)
-
-		age, uncertainty = calculate_error_weighted_mean_and_st_dev(ages, uncertainties)
-
-		self.data["weighted age"] = (age, uncertainty)
-		print(self.name, self.data["weighted age"])
-
-
-	def calculate_error_weighted_mean_and_st_dev_U_cps(self):
+	def calculate_error_weighted_mean_and_st_dev_U_cps(self, config):
 		U_mp = self.massPeaks[self.find_uranium_peak_name()]
-		means_and_st_devs = [row.data[DataKey.OUTLIER_RES_MEAN_STDEV] for row in U_mp.rows]
+		means_and_st_devs = [row.data[config][DataKey.OUTLIER_RES_MEAN_STDEV] for row in U_mp.rows]
 		Us, uncertainties = zip(*means_and_st_devs)
 
-		self.data["U concentration"] = calculate_error_weighted_mean_and_st_dev(Us, uncertainties)
+		self.data[config][DataKey.U_CONCENTRATION] = calculate_error_weighted_mean_and_st_dev(Us, uncertainties)

@@ -21,6 +21,6 @@ if __name__ == "__main__":
     model.set_view(window)
 
     set_except_hook(window)
-    model.import_samples("C:/Users/19402828/Documents/Python Scripts/Crayfish\data/rm_k6_19080820_b.csv",False)
+    # model.import_samples("C:/Users/19402828/Documents/Python Scripts/Crayfish\data/rm_k7.csv",False)
     window.show()
     sys.exit(app.exec_())

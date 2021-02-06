@@ -6,6 +6,7 @@ from views.background_correction_selection_dialog import BackgroundSelectionDial
 from views.cps_time_series_dialog import cpsTimeSeriesDialog
 from views.samples_overview import SamplesOverview
 from views.sbm_time_series_dialog import SBMTimeSeriesDialog
+from views.standard_line_dialog import StandardLineDialog
 from views.standard_selection_dialog import EquilibriumStandardSelectionDialog, AgeStandardSelectionDialog
 from views.whole_rock_activity_input_dialog import WholeRockActivityDialog
 from views.ages_dialog import AgeDialog
@@ -53,8 +54,8 @@ class CrayfishWindow(QMainWindow):
         dialog = SBMTimeSeriesDialog(samples)
         result = dialog.exec()
 
-    def show_user_cps_time_series(self, samples):
-        dialog = cpsTimeSeriesDialog(samples)
+    def show_user_cps_time_series(self, configs, samples):
+        dialog = cpsTimeSeriesDialog(configs, samples)
         result = dialog.exec()
 
     def ask_user_for_background_correction_method(self):
@@ -68,6 +69,10 @@ class CrayfishWindow(QMainWindow):
         dialog = WholeRockActivityDialog(samples)
         result = dialog.exec()
 
-    def show_user_ages(self, samples):
-        dialog = AgeDialog(samples)
+    def show_user_standard_line(self, samples, configurations):
+        dialog = StandardLineDialog(samples, configurations)
+        result = dialog.exec()
+
+    def show_user_ages(self, samples, configs):
+        dialog = AgeDialog(samples, configs)
         result = dialog.exec()

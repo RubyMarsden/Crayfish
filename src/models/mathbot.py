@@ -5,7 +5,10 @@ import statsmodels.stats.stattools as stattools
 # import robustats
 from sklearn.linear_model import LinearRegression
 import math
+
+from models import crayfish_model
 from models.settings import TH230_DECAY_CONSTANT, TH230_DECAY_CONSTANT_ERROR
+from models.data_key import DataKey
 
 
 def calculate_outlier_resistant_mean_and_st_dev(data, number_of_outliers_allowed):
@@ -96,11 +99,10 @@ def weightedRegression(xs, ys, xErrors, yErrors, fitIntercept):
 """
 
 
+# TODO check this is ok with Matthew...
 def calculate_age_from_values(x, dx, y, dy, w, dw, standard_line, standard_line_uncertainty):
     m = (y - w) / (x - w)
-    print(m)
     standard_corrected_m = m/standard_line
-    print(standard_corrected_m)
     c = TH230_DECAY_CONSTANT
     dc = TH230_DECAY_CONSTANT_ERROR
     s = 1/standard_line
@@ -125,7 +127,7 @@ def calculate_age_from_values(x, dx, y, dy, w, dw, standard_line, standard_line_
 
         return age, uncertainty
     else:
-        return None, None
+        return "m > 1"
 
 
 def calculate_error_weighted_mean_and_st_dev(values, errors):

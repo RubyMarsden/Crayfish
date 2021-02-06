@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import QHBoxLayout, QDialog, QPushButton, QWidget, QVBoxLay
     QRadioButton
 from PyQt5.QtCore import Qt
 
-from models.row import DataKey
+from models.data_key import DataKey
 
 matplotlib.use('QT5Agg')
 import matplotlib.pyplot as plt
@@ -15,10 +15,12 @@ from utils import ui_utils
 
 
 class cpsTimeSeriesDialog(QDialog):
-    def __init__(self, samples):
+    def __init__(self, configs, samples):
         QDialog.__init__(self)
 
         self.samples = samples
+        self.configuration_sbm = configs[0]
+        self.configuration_non_sbm = configs[1]
         self.highlight_area = None
 
         self.setWindowTitle("cps measurements per cycle")
@@ -112,9 +114,19 @@ class cpsTimeSeriesDialog(QDialog):
         self.sample_flag_box.setChecked(current_tree_item.spot.is_flagged)
 
         if self.sbm_check_box.isChecked():
-            self.plot_cps_graph(current_tree_item.spot.massPeaks, self.axes, DataKey.SBM_NORMALISED)
+            self.plot_cps_graph(
+                current_tree_item.spot.massPeaks,
+                self.axes,
+                config=self.configuration_sbm,
+                axes_label="SBM normalised counts"
+            )
         else:
-            self.plot_cps_graph(current_tree_item.spot.massPeaks, self.axes, DataKey.COUNTS_PER_SECOND)
+            self.plot_cps_graph(
+                current_tree_item.spot.massPeaks,
+                self.axes,
+                config=self.configuration_non_sbm,
+                axes_label="Counts per second"
+            )
 
     def on_flag_point_state_changed(self):
         sample = self.sample_tree.tree.currentItem()
@@ -123,23 +135,25 @@ class cpsTimeSeriesDialog(QDialog):
     def on_sbm_box_state_changed(self):
         current_tree_item = self.sample_tree.tree.currentItem()
         if self.sbm_check_box.isChecked():
-            self.plot_cps_graph(current_tree_item.spot.massPeaks, self.axes, DataKey.SBM_NORMALISED)
+            config = self.configuration_sbm
+            axes_label = "SBM normalised counts"
         else:
-            self.plot_cps_graph(current_tree_item.spot.massPeaks, self.axes, DataKey.COUNTS_PER_SECOND)
+            config = self.configuration_non_sbm
+            axes_label = "Counts per second"
+        self.plot_cps_graph(current_tree_item.spot.massPeaks, self.axes, config, axes_label)
 
-
-    def plot_cps_graph(self, mass_peaks, axis, key):
+    def plot_cps_graph(self, mass_peaks, axis, config, axes_label):
         axis.clear()
         axis.spines['top'].set_visible(False)
         axis.spines['right'].set_visible(False)
         for massPeak in mass_peaks.values():
             for row in massPeak.rows:
-                xs = [i for i in range(len(row.data[key]))]
-                ys = [value for value in row.data[key]]
-            axis.plot(xs, ys, label = massPeak.mpName)
-            plt.legend(loc = "upper left")
+                xs = [i for i in range(len(row.data[config][DataKey.CPS]))]
+                ys = [value for value in row.data[config][DataKey.CPS]]
+            axis.plot(xs, ys, label=massPeak.mpName)
+            plt.legend(loc="upper left")
         axis.set_xlabel("Spot number")
-        axis.set_ylabel(key)
+        axis.set_ylabel(axes_label)
         plt.tight_layout()
         self.canvas.draw()
 
@@ -156,8 +170,6 @@ class cpsTimeSeriesDialog(QDialog):
             checkbox_layout.addWidget(box, i // 3, i % 3)
 
         return checkbox_layout
-
-
 
     def make_background_graph(self):
         pass

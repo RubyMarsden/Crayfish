@@ -14,15 +14,15 @@ from views.sample_tree import SampleTreeWidget
 from utils import ui_utils
 
 
-class AgeDialog(QDialog):
+class StandardLineDialog(QDialog):
     def __init__(self, samples, configs):
         QDialog.__init__(self)
 
-        self.samples = [sample for sample in samples if not sample.is_standard]
+        self.samples = [sample for sample in samples if sample.is_standard]
         self.configuration_sbm = configs[0]
         self.configuration_non_sbm = configs[1]
 
-        self.setWindowTitle("Ages")
+        self.setWindowTitle("Standard line")
         self.setMinimumWidth(450)
 
         layout = QHBoxLayout()
@@ -60,19 +60,19 @@ class AgeDialog(QDialog):
         # self.sbm_check_box.stateChanged.connect(self.on_sbm_box_state_changed)
 
         top_bar = QHBoxLayout()
-        top_bar.addWidget(QLabel("Sample and spot name"))
+        top_bar.addWidget(QLabel("Hi?"))
         top_bar.addWidget(self.sbm_check_box, alignment=Qt.AlignCenter)
         # top_bar.addWidget(self.sample_flag_box, alignment=Qt.AlignRight)
 
         layout = QVBoxLayout()
         layout.addLayout(top_bar)
-        layout.addWidget(self._create_age_graph_and_point_selection(samples))
+        layout.addWidget(self._create_standard_line_graph(samples))
 
         widget = QWidget()
         widget.setLayout(layout)
         return widget
 
-    def _create_age_graph_and_point_selection(self, samples):
+    def _create_standard_line_graph(self, samples):
 
         graph_and_points = QWidget()
         layout = QVBoxLayout()
@@ -105,36 +105,33 @@ class AgeDialog(QDialog):
         # self.sample_flag_box.setChecked(current_tree_item.spot.is_flagged)
         #
         if self.sbm_check_box.isChecked():
-            self.plot_cps_graph(current_tree_item.spot, self.axes, self.configuration_sbm)
+            self.plot_standard_line_graph(current_tree_item.spot, self.axes, self.configuration_sbm)
         else:
-            self.plot_cps_graph(current_tree_item.spot, self.axes, self.configuration_non_sbm)
+            self.plot_standard_line_graph(current_tree_item.spot, self.axes, self.configuration_non_sbm)
 
-    def plot_cps_graph(self, spot, axis, config):
+    def plot_standard_line_graph(self, spot, axis, config):
         axis.clear()
         axis.spines['top'].set_visible(False)
         axis.spines['right'].set_visible(False)
         xs = []
+        xerrors = []
         ys = []
-        errors = []
-        if len(spot.data[config][DataKey.AGES]) == 0:
+        yerrors = []
+        if len(spot.data[config][DataKey.ACTIVITY_RATIOS]) == 0:
             pass
         else:
-            for i, age in enumerate(spot.data[config][DataKey.AGES]):
-                if isinstance(age, str):
+            for ratio in spot.data[config][DataKey.ACTIVITY_RATIOS]:
+                if isinstance(ratio, str):
                     continue
-                x = i + 1
-                y, dy = age
+                (x, dx), (y, dy) = ratio
                 xs.append(x)
-                if y is None:
-                    ys.append(0)
-                    errors.append(0)
-                else:
-                    ys.append(y)
-                    errors.append(dy)
+                xerrors.append(dx)
+                ys.append(y)
+                yerrors.append(dy)
         # TODO errors
         axis.scatter(xs, ys, label=spot.name)
-        plt.errorbar(xs, ys, yerr=errors)
-        axis.set_xlabel("Scan number")
-        axis.set_ylabel("Age (ka)")
+        plt.errorbar(xs, ys, xerr=xerrors, yerr=yerrors)
+        axis.set_xlabel("(238U)/(232Th)")
+        axis.set_ylabel("(230Th)/(232Th)")
         plt.tight_layout()
         self.canvas.draw()

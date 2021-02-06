@@ -1,7 +1,8 @@
 import unittest
 
 from models.mathbot import interpolate_to_exponential
-from models.row import Row, DataKey
+from models.row import Row
+from models.data_key import DataKey
 
 
 class BackgroundCorrectionTest(unittest.TestCase):
