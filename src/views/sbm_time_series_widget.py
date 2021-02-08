@@ -12,9 +12,9 @@ from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 
 
-class SBMTimeSeriesDialog(QDialog):
+class SBMTimeSeriesWidget(QWidget):
     def __init__(self, samples):
-        QDialog.__init__(self)
+        QWidget.__init__(self)
 
         self.samples = samples
         self.highlight_area = None
@@ -33,12 +33,8 @@ class SBMTimeSeriesDialog(QDialog):
         self.sample_tree = SampleTreeWidget()
         self.sample_tree.tree.currentItemChanged.connect(self.on_selected_sample_change)
 
-        self.continue_button = QPushButton("Continue")
-        self.continue_button.clicked.connect(self.accept)
-
         layout = QVBoxLayout()
         layout.addWidget(self.sample_tree)
-        layout.addWidget(self.continue_button, alignment=Qt.AlignRight)
 
         widget = QWidget()
         widget.setLayout(layout)

@@ -105,15 +105,14 @@ class Spot:
 		for mp in self.massPeaks.values():
 			mp.calculate_outlier_resistant_mean_st_dev_for_rows(config)
 
-	def background_correction(self, config, background_method, background1, background2):
+	def background_correction(self, config, background1, background2):
 		for massPeak in self.massPeaks.values():
 			if massPeak.mpName == "ThO246":
-				massPeak.background_correction_230Th(config, background_method, background1, background2)
+				massPeak.background_correction_230Th(config, background1, background2)
 			elif massPeak.mpName in self.mpNamesNonBackground:
 				massPeak.background_correction_all_peaks(config, background2)
 
 	def calculate_activity_ratios(self, config):
-		# TODO sbm normalisation
 		activity_ratios = []
 
 		U = self.massPeaks[self.uranium_peak_name]

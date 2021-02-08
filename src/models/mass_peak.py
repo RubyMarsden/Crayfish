@@ -33,9 +33,9 @@ class MassPeak:
         for row in self.rows:
             row.calculate_mean_and_st_dev_blocks(config)
 
-    def background_correction_230Th(self, config, background_method, background1, background2):
+    def background_correction_230Th(self, config, background1, background2):
         for row, row_b1, row_b2 in zip(self.rows, background1.rows, background2.rows):
-            row.background_correction_230Th(config, background_method, row_b1, row_b2)
+            row.background_correction_230Th(config, row_b1, row_b2)
 
     def background_correction_all_peaks(self, config, background2):
         for row, row_b2 in zip(self.rows, background2.rows):

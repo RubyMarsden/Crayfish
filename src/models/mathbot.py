@@ -98,8 +98,6 @@ def weightedRegression(xs, ys, xErrors, yErrors, fitIntercept):
     return model.intercept_, model.coef_    
 """
 
-
-# TODO check this is ok with Matthew...
 def calculate_age_from_values(x, dx, y, dy, w, dw, standard_line, standard_line_uncertainty):
     m = (y - w) / (x - w)
     standard_corrected_m = m/standard_line

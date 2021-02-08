@@ -2,6 +2,7 @@ import copy
 
 from PyQt5.QtCore import pyqtSignal, QObject
 
+from models.background_method import BackgroundCorrection
 from models.configuration import Configuration
 from models.data_key import DataKey
 from models.sample import Sample
@@ -77,13 +78,19 @@ class CrayfishModel():
     ################
     ## Processing ##
     ################
-    def process_samples(self):
-        configuration_sbm = Configuration(normalise_by_sbm=True)
-        configuration_non_sbm = Configuration(normalise_by_sbm=False)
-        configurations = [configuration_sbm, configuration_non_sbm]
+    def create_configurations(self):
+        configurations = []
+        for method in BackgroundCorrection:
+            for normalise_by_sbm in (True, False):
+                configuration = Configuration(normalise_by_sbm, method)
+                configurations.append(configuration)
 
+        return configurations
+
+    def process_samples(self):
+        configs = self.create_configurations()
         samples = self.samples_by_name.values()
-        self.setup_new_calculation(configurations, samples)
+        self.setup_new_calculation(configs, samples)
 
         equilibrium_standards = self.view.ask_user_for_equilibrium_standards(samples, [])
         if equilibrium_standards is None:
@@ -101,29 +108,18 @@ class CrayfishModel():
 
         self.standardise_all_sbm_and_calculate_time_series(samples)
 
-        self.view.show_user_sbm_time_series(samples)
-
-        for config in configurations:
+        for config in configs:
             self.normalise_all_counts_to_cps(config, samples)
             self.calculate_outlier_resistant_mean_st_dev_for_row(config, samples)
-
-        self.view.show_user_cps_time_series(configurations, samples)
-
-        background_method = self.view.ask_user_for_background_correction_method()
-        if background_method is None:
-            return
-
-        for config in configurations:
-            self.background_correction(config, samples, background_method)
+            self.background_correction(config, samples)
             self.calculate_activity_ratios(config, samples)
             self.standard_line_calculation(config, samples)
             self.calculate_ages_and_weighted_mean_age(config, samples)
             self.get_U_mean(config, samples)
 
-        self.view.show_user_standard_line(samples, configurations)
-        self.view.show_user_ages(samples, configurations)
+        self.view.show_user_results(configs, samples)
 
-        for config in configurations:
+        for config in configs:
             self.export_results(config, samples, "output")
             self.export_test_csv(config, samples)
 
@@ -151,10 +147,10 @@ class CrayfishModel():
             for spot in sample.spots:
                 spot.calculate_outlier_resistant_mean_st_dev_for_rows(config)
 
-    def background_correction(self, config, samples, background_method: str):
+    def background_correction(self, config, samples):
         for sample in samples:
             for spot in sample.spots:
-                spot.background_correction(config, background_method, spot.massPeaks[BACKGROUND1], spot.massPeaks[BACKGROUND2])
+                spot.background_correction(config, spot.massPeaks[BACKGROUND1], spot.massPeaks[BACKGROUND2])
 
     def calculate_activity_ratios(self, config, samples):
         for sample in samples:
@@ -337,3 +333,4 @@ class CrayfishModel():
 
 class Signals(QObject):
     sample_list_updated = pyqtSignal([list, list])
+

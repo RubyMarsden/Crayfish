@@ -1,6 +1,5 @@
 import matplotlib
-from PyQt5.QtWidgets import QHBoxLayout, QDialog, QPushButton, QWidget, QVBoxLayout, QLabel, QCheckBox, QGridLayout, \
-    QRadioButton
+from PyQt5.QtWidgets import QHBoxLayout, QPushButton, QWidget, QVBoxLayout, QLabel, QCheckBox, QGridLayout
 from PyQt5.QtCore import Qt
 
 from models.data_key import DataKey
@@ -14,9 +13,9 @@ from views.sample_tree import SampleTreeWidget
 from utils import ui_utils
 
 
-class cpsTimeSeriesDialog(QDialog):
+class cpsTimeSeriesWidget(QWidget):
     def __init__(self, configs, samples):
-        QDialog.__init__(self)
+        QWidget.__init__(self)
 
         self.samples = samples
         self.configuration_sbm = configs[0]
@@ -38,7 +37,7 @@ class cpsTimeSeriesDialog(QDialog):
         self.sample_tree.tree.currentItemChanged.connect(self.on_selected_sample_change)
 
         self.continue_button = QPushButton("Continue")
-        self.continue_button.clicked.connect(self.accept)
+        # self.continue_button.clicked.connect(self.accept)
 
         layout = QVBoxLayout()
         layout.addWidget(self.sample_tree)
@@ -147,10 +146,17 @@ class cpsTimeSeriesDialog(QDialog):
         axis.spines['top'].set_visible(False)
         axis.spines['right'].set_visible(False)
         for massPeak in mass_peaks.values():
+            data_x = []
+            data_y = []
+            x = 0
             for row in massPeak.rows:
-                xs = [i for i in range(len(row.data[config][DataKey.CPS]))]
+                number_of_scans = len(row.data[config][DataKey.CPS])
+                xs = [i + x for i in range(number_of_scans)]
                 ys = [value for value in row.data[config][DataKey.CPS]]
-            axis.plot(xs, ys, label=massPeak.mpName)
+                x += number_of_scans
+                data_x.extend(xs)
+                data_y.extend(ys)
+            axis.plot(data_x, data_y, label=massPeak.mpName)
             plt.legend(loc="upper left")
         axis.set_xlabel("Spot number")
         axis.set_ylabel(axes_label)

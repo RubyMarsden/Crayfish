@@ -1,32 +1,27 @@
 import matplotlib
-from PyQt5.QtWidgets import QHBoxLayout, QDialog, QPushButton, QWidget, QVBoxLayout, QLabel, QCheckBox, QGridLayout, \
-    QRadioButton
 from PyQt5.QtCore import Qt
-
-from models.data_key import DataKey
+from PyQt5.QtWidgets import QHBoxLayout, QDialog, QPushButton, QWidget, QVBoxLayout, QLabel
 
 matplotlib.use('QT5Agg')
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_qt5agg import FigureCanvas
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 
+from models.data_key import DataKey
+from views.configuration_widget import ConfigurationWidget
 from views.sample_tree import SampleTreeWidget
 from utils import ui_utils
 
 
-class AgeDialog(QDialog):
-    def __init__(self, samples, configs):
-        QDialog.__init__(self)
+class AgeResultsWidget(QWidget):
+    def __init__(self, configs, samples):
+        QWidget.__init__(self)
 
         self.samples = [sample for sample in samples if not sample.is_standard]
-        self.configuration_sbm = configs[0]
-        self.configuration_non_sbm = configs[1]
 
         self.setWindowTitle("Ages")
         self.setMinimumWidth(450)
 
         layout = QHBoxLayout()
-        layout.addWidget(self._create_left_widget(self.samples))
+        layout.addWidget(self._create_left_widget(self.samples, configs[0]))
         layout.addWidget(self._create_right_widget())
         self.setLayout(layout)
 
@@ -34,34 +29,27 @@ class AgeDialog(QDialog):
 
     def _create_right_widget(self):
         self.sample_tree = SampleTreeWidget()
-        self.sample_tree.tree.currentItemChanged.connect(self.on_selected_sample_change)
-
-        self.continue_button = QPushButton("Continue")
-        self.continue_button.clicked.connect(self.accept)
+        self.sample_tree.tree.currentItemChanged.connect(lambda i, j: self.replot_graph())
 
         layout = QVBoxLayout()
         layout.addWidget(self.sample_tree)
-        layout.addWidget(self.continue_button, alignment=Qt.AlignRight)
 
         widget = QWidget()
         widget.setLayout(layout)
 
         return widget
 
-    def _create_left_widget(self, samples):
+    def _create_left_widget(self, samples, current_config):
+        self.configuration_widget = ConfigurationWidget(current_config)
+        self.configuration_widget.configuration_state_changed.connect(self.replot_graph)
+
         # self.sample_flag_box = QCheckBox("Flag spot")
         # self.sample_flag_box.setChecked(False)
-
         # self.sample_flag_box.stateChanged.connect(self.on_flag_point_state_changed)
-
-        self.sbm_check_box = QCheckBox("Normalise to sbm")
-        self.sbm_check_box.setChecked(False)
-
-        # self.sbm_check_box.stateChanged.connect(self.on_sbm_box_state_changed)
 
         top_bar = QHBoxLayout()
         top_bar.addWidget(QLabel("Sample and spot name"))
-        top_bar.addWidget(self.sbm_check_box, alignment=Qt.AlignCenter)
+        top_bar.addWidget(self.configuration_widget, alignment=Qt.AlignCenter)
         # top_bar.addWidget(self.sample_flag_box, alignment=Qt.AlignRight)
 
         layout = QVBoxLayout()
@@ -92,25 +80,15 @@ class AgeDialog(QDialog):
     ## Actions ##
     #############
 
-    def on_selected_sample_change(self, current_tree_item, previous_tree_item):
-        if current_tree_item is None:
-            self.axis.clear()
-            return
-        #
-        # if current_tree_item.is_sample:
-        #     self.sample_flag_box.setVisible(False)
-        #     return
-        #
-        # self.sample_flag_box.setVisible(True)
-        # self.sample_flag_box.setChecked(current_tree_item.spot.is_flagged)
-        #
-        if self.sbm_check_box.isChecked():
-            self.plot_cps_graph(current_tree_item.spot, self.axes, self.configuration_sbm)
-        else:
-            self.plot_cps_graph(current_tree_item.spot, self.axes, self.configuration_non_sbm)
+    def replot_graph(self):
+        spot = self.sample_tree.tree.currentItem().spot
+        config = self.configuration_widget.current_config
+        self.plot_cps_graph(spot, self.axes, config)
 
     def plot_cps_graph(self, spot, axis, config):
         axis.clear()
+        if spot is None:
+            return
         axis.spines['top'].set_visible(False)
         axis.spines['right'].set_visible(False)
         xs = []
@@ -131,9 +109,7 @@ class AgeDialog(QDialog):
                 else:
                     ys.append(y)
                     errors.append(dy)
-        # TODO errors
-        axis.scatter(xs, ys, label=spot.name)
-        plt.errorbar(xs, ys, yerr=errors)
+        plt.errorbar(xs, ys, yerr=errors, linestyle="none", marker='o')
         axis.set_xlabel("Scan number")
         axis.set_ylabel("Age (ka)")
         plt.tight_layout()

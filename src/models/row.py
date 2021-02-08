@@ -51,13 +51,15 @@ class Row:
         self.data[config][DataKey.OUTLIER_RES_MEAN_STDEV] = calculate_outlier_resistant_mean_and_st_dev(
             self.data[config][DataKey.CPS], NUMBER_OF_OUTLIERS_ALLOWED)
 
-    def background_correction_230Th(self, config, background_method, background1, background2):
-        if background_method == BackgroundCorrection.EXP:
+    def background_correction_230Th(self, config, background1, background2):
+        if config.background_method == BackgroundCorrection.EXP:
             self.exponential_correction(config, background1, background2)
-        elif background_method == BackgroundCorrection.LIN:
+        elif config.background_method == BackgroundCorrection.LIN:
             self.linear_correction(config, background1, background2)
-        elif background_method == BackgroundCorrection.CONST:
+        elif config.background_method == BackgroundCorrection.CONST:
             self.constant_background_correction(config, background2)
+        elif config.background_method == BackgroundCorrection.NONE:
+            self.no_background_correction(config)
         else:
             raise Exception("No background correction selected")
 
@@ -126,3 +128,6 @@ class Row:
             background_corrected_uncertainty = errors_in_quadrature([uncertainty, y_estimated_background_uncertainty])
 
         self.data[config][DataKey.BKGRD_CORRECTED] = background_corrected_cps, background_corrected_uncertainty
+
+    def no_background_correction(self, config):
+        self.data[config][DataKey.BKGRD_CORRECTED] = self.data[config][DataKey.OUTLIER_RES_MEAN_STDEV]
