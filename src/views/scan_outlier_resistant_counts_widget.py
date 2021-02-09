@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from models.data_key import DataKey
 from utils import ui_utils
 
-
+# TODO fix lines which are over the top of each other
 class ScanOutlierResistantCountsWidget(QWidget):
     def __init__(self, results_dialog):
         QWidget.__init__(self)

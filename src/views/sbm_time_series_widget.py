@@ -1,20 +1,19 @@
 import matplotlib
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QWidget, QHBoxLayout, QLabel, QPushButton, QCheckBox
-from matplotlib.backend_bases import NavigationToolbar2
+from PyQt5.QtWidgets import QVBoxLayout, QWidget, QHBoxLayout, QLabel, QCheckBox
 
 from utils import ui_utils
 from views.sample_tree import SampleTreeWidget
 
 matplotlib.use('QT5Agg')
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_qt5agg import FigureCanvas
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 
 
 class SBMTimeSeriesWidget(QWidget):
-    def __init__(self, samples):
+    def __init__(self, results_dialog, samples):
         QWidget.__init__(self)
+
+        self.results_dialog = results_dialog
 
         self.samples = samples
         self.highlight_area = None
@@ -23,39 +22,17 @@ class SBMTimeSeriesWidget(QWidget):
         self.setMinimumWidth(450)
 
         layout = QHBoxLayout()
-        layout.addWidget(self._create_left_widget())
-        layout.addWidget(self._create_right_widget())
+        layout.addLayout(self._create_left_widget())
         self.setLayout(layout)
 
-        self.sample_tree.set_samples(self.samples)
-
-    def _create_right_widget(self):
-        self.sample_tree = SampleTreeWidget()
-        self.sample_tree.tree.currentItemChanged.connect(self.on_selected_sample_change)
-
-        layout = QVBoxLayout()
-        layout.addWidget(self.sample_tree)
-
-        widget = QWidget()
-        widget.setLayout(layout)
-
-        return widget
+        self.results_dialog.sample_tree.tree.currentItemChanged.connect(self.on_selected_sample_change)
 
     def _create_left_widget(self):
-        self.sample_flag_box = QCheckBox("Flag spot")
-        self.sample_flag_box.stateChanged.connect(self.on_flag_spot_state_changed)
-
-        top_bar = QHBoxLayout()
-        top_bar.addWidget(QLabel("Secondary beam monitor"))
-        top_bar.addWidget(self.sample_flag_box, alignment= Qt.AlignRight)
-
         layout = QVBoxLayout()
-        layout.addLayout(top_bar)
+        layout.addWidget(QLabel("Secondary beam monitor"))
         layout.addWidget(self._create_sbm_graphs())
 
-        widget = QWidget()
-        widget.setLayout(layout)
-        return widget
+        return layout
 
     def _create_sbm_graphs(self):
 
@@ -85,12 +62,6 @@ class SBMTimeSeriesWidget(QWidget):
         self.canvas.draw()
 
     def on_selected_sample_change(self, current_tree_item, previous_tree_item):
-        if current_tree_item.is_sample:
-            self.sample_flag_box.setVisible(False)
-            return
-
-        self.sample_flag_box.setVisible(True)
-        self.sample_flag_box.setChecked(current_tree_item.spot.is_flagged)
 
         if current_tree_item is None:
             self.axis.clear()
@@ -114,13 +85,13 @@ class SBMTimeSeriesWidget(QWidget):
 
         self.start_end_time = {}
         time = 0
-        interspot_time = 100
+        inter_spot_time = 100
         for spot in sorted_spots:
             xs, ys = zip(*spot.sbm_time_series)
             output_xs = [(x + time) / 3600 for x in xs]
             axis.plot(output_xs, ys, color='b')
             self.start_end_time[spot] = time, time + spot.count_time_duration
-            time += spot.count_time_duration + interspot_time
+            time += spot.count_time_duration + inter_spot_time
 
         axis.set_xlim(0, time / 3600)
 
@@ -131,9 +102,3 @@ class SBMTimeSeriesWidget(QWidget):
         self.highlight_area = self.all_axis.fill_betweenx([0, 300000], start_time / 3600, end_time / 3600,
                                                           facecolor='#ff000080')
         self.canvas.draw()
-
-
-    def on_flag_spot_state_changed(self):
-        sample = self.sample_tree.tree.currentItem()
-        sample.spot.is_flagged = self.sample_flag_box.isChecked()
-

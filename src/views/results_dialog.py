@@ -1,5 +1,5 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QDialog, QTabWidget, QVBoxLayout, QPushButton, QHBoxLayout, QCheckBox, QWidget
+from PyQt5.QtWidgets import QDialog, QTabWidget, QVBoxLayout, QPushButton, QHBoxLayout, QCheckBox, QWidget, QGridLayout
 
 from views.configuration_widget import ConfigurationWidget
 from views.sample_tree import SampleTreeWidget
@@ -37,7 +37,7 @@ class ResultsDialog(QDialog):
         layout = QVBoxLayout()
         layout.addWidget(self.sample_flag_box)
         layout.addWidget(self.sample_tree)
-        layout.addWidget(self.continue_button,  alignment=Qt.AlignRight)
+        layout.addWidget(self.continue_button, alignment=Qt.AlignRight)
 
         return layout
 
@@ -45,14 +45,48 @@ class ResultsDialog(QDialog):
         self.configuration_widget = ConfigurationWidget(configs[0])
 
         self.tabs = QTabWidget()
-        self.tabs.addTab(SBMTimeSeriesWidget(samples), "1. SBM time series")
-        self.tabs.addTab(cpsTimeSeriesWidget(configs, samples), "2. Counts per second")
+        self.tabs.addTab(SBMTimeSeriesWidget(self, samples), "1. SBM time series")
+        self.tabs.addTab(cpsTimeSeriesWidget(self), "2. Counts per second")
         self.tabs.addTab(ScanOutlierResistantCountsWidget(self), "3. Outlier resistant scan means")
         self.tabs.addTab(StandardLineWidget(configs, samples), "4. Standard line")
-        self.tabs.addTab(AgeResultsWidget(configs, samples), "5. Ages")
+        self.tabs.addTab(AgeResultsWidget(self), "5. Ages")
+
+        self.mass_checkboxes = self.make_mass_check_boxes(samples)
 
         layout = QVBoxLayout()
-        layout.addWidget(self.configuration_widget)
         layout.addWidget(self.tabs)
+        layout.addWidget(self.configuration_widget)
+        layout.addLayout(self.mass_checkboxes)
 
         return layout
+
+    def make_mass_check_boxes(self, samples):
+
+        for sample in samples:
+            for spot in sample.spots:
+                masses = spot.mpNames
+
+        checkbox_layout = QGridLayout()
+
+        for i, mass in enumerate(masses):
+            box = QCheckBox(mass)
+            checkbox_layout.addWidget(box, i // 3, i % 3)
+
+        return checkbox_layout
+    # TODO fix this:
+    def on_selected_sample_change(self, current_tree_item, previous_tree_item):
+        if current_tree_item is None:
+            self.axis.clear()
+            return
+
+        if current_tree_item.is_sample:
+            self.sample_flag_box.setVisible(False)
+            return
+
+        self.sample_flag_box.setVisible(True)
+        self.sample_flag_box.setChecked(current_tree_item.spot.is_flagged)
+
+    # TODO fix this:
+    def on_flag_point_state_changed(self):
+        sample = self.sample_tree.tree.currentItem()
+        sample.spot.is_flagged = self.sample_flag_box.isChecked()
