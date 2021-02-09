@@ -13,10 +13,13 @@ from views.age_results_widget import AgeResultsWidget
 class ResultsDialog(QDialog):
     def __init__(self, configs, samples):
         QDialog.__init__(self)
+        # Right widget has to be created first as tabs depend on sample tree - so that must be instantiated first.
+        right_widget = self._create_right_widget()
+        left_widget = self._create_left_widget(configs, samples)
 
         layout = QHBoxLayout()
-        layout.addLayout(self._create_left_widget(configs, samples))
-        layout.addLayout(self._create_right_widget())
+        layout.addLayout(left_widget)
+        layout.addLayout(right_widget)
         self.setLayout(layout)
 
         self.sample_tree.set_samples(samples)
@@ -39,14 +42,14 @@ class ResultsDialog(QDialog):
         return layout
 
     def _create_left_widget(self, configs, samples):
+        self.configuration_widget = ConfigurationWidget(configs[0])
+
         self.tabs = QTabWidget()
         self.tabs.addTab(SBMTimeSeriesWidget(samples), "1. SBM time series")
         self.tabs.addTab(cpsTimeSeriesWidget(configs, samples), "2. Counts per second")
-        self.tabs.addTab(ScanOutlierResistantCountsWidget(configs, samples), "3. Outlier resistant scan means")
+        self.tabs.addTab(ScanOutlierResistantCountsWidget(self), "3. Outlier resistant scan means")
         self.tabs.addTab(StandardLineWidget(configs, samples), "4. Standard line")
         self.tabs.addTab(AgeResultsWidget(configs, samples), "5. Ages")
-
-        self.configuration_widget = ConfigurationWidget(configs[0])
 
         layout = QVBoxLayout()
         layout.addWidget(self.configuration_widget)
