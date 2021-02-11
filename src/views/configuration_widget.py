@@ -9,31 +9,35 @@ class ConfigurationWidget(QWidget):
     # signals get constructed before init method because they hack things
     configuration_state_changed = pyqtSignal()
 
-    def __init__(self, default_config: Configuration):
+    def __init__(self):
         super().__init__()
-        self.current_config = default_config
+        self.current_config = None
 
         self.sbm_check_box = QCheckBox("Normalise to sbm")
-        self.sbm_check_box.setChecked(default_config.normalise_by_sbm)
         self.sbm_check_box.stateChanged.connect(self.on_state_changed)
 
         self.background_button_group = QButtonGroup()
-        buttons = []
+        self.buttons = []
 
         for method in BackgroundCorrection:
             button = QRadioButton(method.value)
-            button.setChecked(method == default_config.background_method)
             button.method = method
             button.clicked.connect(self.on_state_changed)
             self.background_button_group.addButton(button)
-            buttons.append(button)
+            self.buttons.append(button)
 
         layout = QHBoxLayout()
         layout.addWidget(self.sbm_check_box)
-        for button in buttons:
+        for button in self.buttons:
             layout.addWidget(button)
 
         self.setLayout(layout)
+
+    def set_state(self, config: Configuration):
+        self.current_config = config
+        for button in self.buttons:
+            button.setChecked(button.method == config.background_method)
+        self.sbm_check_box.setChecked(config.normalise_by_sbm)
 
     ###########
     # Actions #

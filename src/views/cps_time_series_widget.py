@@ -21,9 +21,7 @@ class cpsTimeSeriesWidget(QWidget):
         layout.addLayout(self._create_left_widget())
         self.setLayout(layout)
 
-        self.results_dialog.sample_tree.tree.currentItemChanged.connect(lambda i,j: self.replot_graph)
-        self.results_dialog.sample_flag_box.stateChanged.connect(self.replot_graph)
-        # TODO configuration stays the same for this box - replot is not necessary - so how to stop?
+        self.results_dialog.sample_tree.tree.currentItemChanged.connect(lambda i, j: self.replot_graph())
         self.results_dialog.configuration_widget.configuration_state_changed.connect(self.replot_graph)
 
     def _create_left_widget(self):
@@ -53,16 +51,12 @@ class cpsTimeSeriesWidget(QWidget):
     ## Actions ##
     #############
     def replot_graph(self):
-        mass_peaks = self.results_dialog.sample_tree.tree.currentItem().spot.massPeaks
+        current_item = self.results_dialog.sample_tree.tree.currentItem()
         config = self.results_dialog.configuration_widget.current_config
-        if config.normalise_by_sbm:
-            axes_label = "SBM normalised counts"
-        else:
-            axes_label = "Counts per second"
+        if config and current_item:
+            self.plot_cps_graph(current_item.spot.massPeaks, config)
 
-        self.plot_cps_graph(mass_peaks, config, axes_label)
-
-    def plot_cps_graph(self, mass_peaks, config, axes_label):
+    def plot_cps_graph(self, mass_peaks, config):
         axis = self.axes
         axis.clear()
         axis.spines['top'].set_visible(False)
@@ -81,7 +75,7 @@ class cpsTimeSeriesWidget(QWidget):
             axis.plot(data_x, data_y, label=massPeak.mpName)
             axis.legend(loc="upper left")
         axis.set_xlabel("Spot number")
-        axis.set_ylabel(axes_label)
+        axis.set_ylabel("SBM normalised counts" if config.normalise_by_sbm else "Counts per second")
         plt.tight_layout()
         self.canvas.draw()
 

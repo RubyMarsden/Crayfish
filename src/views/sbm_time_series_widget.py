@@ -10,12 +10,12 @@ import matplotlib.pyplot as plt
 
 
 class SBMTimeSeriesWidget(QWidget):
-    def __init__(self, results_dialog, samples):
+    def __init__(self, results_dialog):
         QWidget.__init__(self)
 
         self.results_dialog = results_dialog
 
-        self.samples = samples
+        self.samples = self.results_dialog.samples
         self.highlight_area = None
 
         self.setWindowTitle("SBM time series")

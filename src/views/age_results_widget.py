@@ -50,9 +50,10 @@ class AgeResultsWidget(QWidget):
     ###############
 
     def replot_graph(self):
-        spot = self.results_dialog.sample_tree.tree.currentItem().spot
+        current_item = self.results_dialog.sample_tree.tree.currentItem()
         config = self.results_dialog.configuration_widget.current_config
-        self.plot_cps_graph(spot, config)
+        if config and current_item:
+            self.plot_cps_graph(current_item.spot, config)
 
     def plot_cps_graph(self, spot, config):
         axis = self.axes
@@ -64,10 +65,12 @@ class AgeResultsWidget(QWidget):
         xs = []
         ys = []
         errors = []
-        if len(spot.data[config][DataKey.AGES]) == 0:
-            pass
-        else:
-            for i, age in enumerate(spot.data[config][DataKey.AGES]):
+        if DataKey.AGES not in spot.data[config]:
+            # TODO plot words on graph
+            return
+        ages = spot.data[config][DataKey.AGES]
+        if len(ages) != 0:
+            for i, age in enumerate(ages):
                 if isinstance(age, str):
                     continue
                 x = i + 1
@@ -79,6 +82,9 @@ class AgeResultsWidget(QWidget):
                 else:
                     ys.append(y)
                     errors.append(dy)
+        else:
+            # TODO plot some text
+            return
         axis.errorbar(xs, ys, yerr=errors, linestyle="none", marker='o')
         axis.set_xlabel("Scan number")
         axis.set_ylabel("Age (ka)")

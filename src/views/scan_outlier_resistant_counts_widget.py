@@ -48,9 +48,10 @@ class ScanOutlierResistantCountsWidget(QWidget):
     #############
 
     def replot_graph(self):
-        spot = self.results_dialog.sample_tree.tree.currentItem().spot
+        current_item = self.results_dialog.sample_tree.tree.currentItem()
         config = self.results_dialog.configuration_widget.current_config
-        self.plot_scan_cps_graph(spot, config)
+        if config and current_item:
+            self.plot_scan_cps_graph(current_item.spot, config)
 
     def plot_scan_cps_graph(self, spot, config):
         axis = self.axes
