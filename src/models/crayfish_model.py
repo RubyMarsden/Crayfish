@@ -21,6 +21,7 @@ class CrayfishModel():
         self.signals = Signals()
         self.view = None
         self.data = {}
+        self.configurations_calculated = set()
 
     def set_view(self, view):
         self.view = view
@@ -78,19 +79,10 @@ class CrayfishModel():
     ################
     ## Processing ##
     ################
-    def create_configurations(self):
-        configurations = []
-        for method in BackgroundCorrection:
-            for normalise_by_sbm in (True, False):
-                configuration = Configuration(normalise_by_sbm, method)
-                configurations.append(configuration)
-
-        return configurations
-
     def process_samples(self):
         configs = self.create_configurations()
         samples = self.samples_by_name.values()
-        self.setup_new_calculation(configs, samples)
+        self.setup_new_calculation(configs)
 
         equilibrium_standards = self.view.ask_user_for_equilibrium_standards(samples, [])
         if equilibrium_standards is None:
@@ -108,28 +100,48 @@ class CrayfishModel():
 
         self.standardise_all_sbm_and_calculate_time_series(samples)
 
-        for config in configs:
-            self.normalise_all_counts_to_cps(config, samples)
-            self.calculate_outlier_resistant_mean_st_dev_for_row(config, samples)
-            self.background_correction(config, samples)
-            self.calculate_activity_ratios(config, samples)
-            self.standard_line_calculation(config, samples)
-            self.calculate_ages_and_weighted_mean_age(config, samples)
-            self.get_U_mean(config, samples)
+        default_config = configs[0]
+        # self.calculate_for_config(default_config)
 
-        self.view.show_user_results(configs, samples)
+        self.view.show_user_results(samples, default_config, self.ensure_config_calculated)
 
         for config in configs:
+            self.ensure_config_calculated(config)
             self.export_results(config, samples, "output")
             self.export_test_csv(config, samples)
 
-    def setup_new_calculation(self, configurations, samples):
-        self.data = {}
+    def create_configurations(self):
+        configurations = []
+        for method in BackgroundCorrection:
+            for normalise_by_sbm in (True, False):
+                configuration = Configuration(normalise_by_sbm, method)
+                configurations.append(configuration)
+
+        return configurations
+
+    def setup_new_calculation(self, configurations):
+        self.data.clear()
+        self.configurations_calculated.clear()
         for config in configurations:
             self.data[config] = {}
-        for sample in samples:
+        for sample in self.samples_by_name.values():
             for spot in sample.spots:
                 spot.setup_new_calculation(configurations)
+
+    def ensure_config_calculated(self, config):
+        if config not in self.configurations_calculated:
+            self.calculate_for_config(config)
+
+    def calculate_for_config(self, config):
+        samples = self.samples_by_name.values()
+        self.normalise_all_counts_to_cps(config, samples)
+        self.calculate_outlier_resistant_mean_st_dev_for_row(config, samples)
+        self.background_correction(config, samples)
+        self.calculate_activity_ratios(config, samples)
+        self.standard_line_calculation(config, samples)
+        self.calculate_ages_and_weighted_mean_age(config, samples)
+        self.get_U_mean(config, samples)
+        self.configurations_calculated.add(config)
 
     def standardise_all_sbm_and_calculate_time_series(self, samples):
         for sample in samples:

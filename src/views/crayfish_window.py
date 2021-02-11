@@ -51,6 +51,6 @@ class CrayfishWindow(QMainWindow):
         dialog = WholeRockActivityDialog(samples)
         result = dialog.exec()
 
-    def show_user_results(self, samples, configs):
-        dialog = ResultsDialog(samples, configs)
+    def show_user_results(self, samples, default_config, ensure_config_calculated_callback):
+        dialog = ResultsDialog(samples, default_config, ensure_config_calculated_callback)
         result = dialog.exec()

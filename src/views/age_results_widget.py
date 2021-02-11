@@ -20,7 +20,7 @@ class AgeResultsWidget(QWidget):
         self.setLayout(layout)
 
         results_dialog.sample_tree.tree.currentItemChanged.connect(lambda i, j: self.replot_graph())
-        results_dialog.configuration_widget.configuration_state_changed.connect(self.replot_graph)
+        results_dialog.configuration_changed.connect(self.replot_graph)
 
     def _create_widget(self):
         layout = QVBoxLayout()

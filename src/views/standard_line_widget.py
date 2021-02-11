@@ -21,7 +21,7 @@ class StandardLineWidget(QWidget):
         layout.addLayout(self._create_widget())
         self.setLayout(layout)
 
-        self.results_dialog.configuration_widget.configuration_state_changed.connect(self.replot_graph)
+        self.results_dialog.configuration_changed.connect(self.replot_graph)
 
     def _create_widget(self):
         layout = QVBoxLayout()

@@ -1,4 +1,4 @@
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import QDialog, QTabWidget, QVBoxLayout, QPushButton, QHBoxLayout, QCheckBox, QWidget, QGridLayout
 
 from views.configuration_widget import ConfigurationWidget
@@ -11,9 +11,12 @@ from views.age_results_widget import AgeResultsWidget
 
 
 class ResultsDialog(QDialog):
-    def __init__(self, configs, samples):
+    configuration_changed = pyqtSignal()
+
+    def __init__(self, samples, default_config, ensure_config_calculated_callback):
         QDialog.__init__(self)
         self.samples = samples
+        self.ensure_config_calculated_callback = ensure_config_calculated_callback
 
         # Right widget has to be created first as tabs depend on sample tree - so that must be instantiated first.
         right_widget = self._create_right_widget()
@@ -24,7 +27,9 @@ class ResultsDialog(QDialog):
         layout.addLayout(right_widget)
         self.setLayout(layout)
 
-        self.configuration_widget.set_state(configs[0])
+        self.configuration_widget.configuration_state_changed.connect(self.on_configuration_widget_state_changed)
+
+        self.configuration_widget.set_state(default_config)
         self.sample_tree.set_samples(samples)
 
     def _create_right_widget(self):
@@ -76,6 +81,7 @@ class ResultsDialog(QDialog):
             checkbox_layout.addWidget(box, i // 3, i % 3)
 
         return checkbox_layout
+
     # TODO fix this:
     def on_selected_sample_change(self, current_tree_item, previous_tree_item):
         if current_tree_item is None:
@@ -93,3 +99,9 @@ class ResultsDialog(QDialog):
     def on_flag_point_state_changed(self):
         sample = self.sample_tree.tree.currentItem()
         sample.spot.is_flagged = self.sample_flag_box.isChecked()
+
+    def on_configuration_widget_state_changed(self):
+        config = self.configuration_widget.current_config
+        self.ensure_config_calculated_callback(config)
+
+        self.configuration_changed.emit()
