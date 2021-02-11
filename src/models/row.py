@@ -49,17 +49,13 @@ class Row:
 
     def calculate_mean_and_st_dev_blocks(self, config, overall_stats):
         if overall_stats is not None:
-            overall_mean, overall_stdev = overall_stats
-            outlier_max = overall_mean + overall_stdev * 3
-            outlier_min = overall_mean - overall_stdev * 3
-            data = [i for i in self.data[config][DataKey.CPS] if outlier_min < i < outlier_max]
+            self.data[config][DataKey.OUTLIER_RES_MEAN_STDEV] = overall_stats
         else:
             data = self.data[config][DataKey.CPS]
-
-        self.data[config][DataKey.OUTLIER_RES_MEAN_STDEV] = calculate_outlier_resistant_mean_and_st_dev(
-            data,
-            NUMBER_OF_OUTLIERS_ALLOWED
-        )
+            self.data[config][DataKey.OUTLIER_RES_MEAN_STDEV] = calculate_outlier_resistant_mean_and_st_dev(
+                data,
+                NUMBER_OF_OUTLIERS_ALLOWED
+            )
 
     def background_correction_230Th(self, config, background1, background2):
         if config.background_method == BackgroundCorrection.EXP:

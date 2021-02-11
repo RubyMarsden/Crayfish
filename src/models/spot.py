@@ -109,8 +109,7 @@ class Spot:
 				background_over_all_scans = []
 				for row in mp.rows:
 					background_over_all_scans.extend(row.data[config][DataKey.CPS])
-				mean_background = np.mean(background_over_all_scans)
-				st_dev_background = np.std(background_over_all_scans)
+				mean_background, st_dev_background = calculate_outlier_resistant_mean_and_st_dev(background_over_all_scans, 20)
 				overall_stats = mean_background, st_dev_background
 
 			mp.calculate_outlier_resistant_mean_st_dev_for_rows(config, overall_stats)
