@@ -64,6 +64,7 @@ class ScanOutlierResistantCountsWidget(QWidget):
             data_x = []
             data_y = []
             errors_y = []
+            
             for i, row in enumerate(massPeak.rows):
                 y, y_error = row.data[config][DataKey.OUTLIER_RES_MEAN_STDEV]
                 data_x.append(i)

@@ -101,7 +101,6 @@ class CrayfishModel():
         self.standardise_all_sbm_and_calculate_time_series(samples)
 
         default_config = configs[0]
-        # self.calculate_for_config(default_config)
 
         self.view.show_user_results(samples, default_config, self.ensure_config_calculated)
 
@@ -114,8 +113,9 @@ class CrayfishModel():
         configurations = []
         for method in BackgroundCorrection:
             for normalise_by_sbm in (True, False):
-                configuration = Configuration(normalise_by_sbm, method)
-                configurations.append(configuration)
+                for apply_primary_background_filter in (True, False):
+                    configuration = Configuration(normalise_by_sbm, apply_primary_background_filter, method)
+                    configurations.append(configuration)
 
         return configurations
 

@@ -103,7 +103,17 @@ class Spot:
 
 	def calculate_outlier_resistant_mean_st_dev_for_rows(self, config):
 		for mp in self.massPeaks.values():
-			mp.calculate_outlier_resistant_mean_st_dev_for_rows(config)
+			if mp.mpName in self.mpNamesNonBackground or not config.apply_primary_background_filter:
+				overall_stats = None
+			else:
+				background_over_all_scans = []
+				for row in mp.rows:
+					background_over_all_scans.extend(row.data[config][DataKey.CPS])
+				mean_background = np.mean(background_over_all_scans)
+				st_dev_background = np.std(background_over_all_scans)
+				overall_stats = mean_background, st_dev_background
+
+			mp.calculate_outlier_resistant_mean_st_dev_for_rows(config, overall_stats)
 
 	def background_correction(self, config, background1, background2):
 		for massPeak in self.massPeaks.values():

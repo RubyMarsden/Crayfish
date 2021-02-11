@@ -85,7 +85,10 @@ class AgeResultsWidget(QWidget):
         else:
             # TODO plot some text
             return
+        weighted_age, age_st_dev = spot.data[config][DataKey.WEIGHTED_AGE]
+
         axis.errorbar(xs, ys, yerr=errors, linestyle="none", marker='o')
+        axis.text(0.5, 1, f"Weighted age: {weighted_age:.0f}, 1σ: {age_st_dev:.0f}", transform=axis.transAxes, horizontalalignment="center")
         axis.set_xlabel("Scan number")
         axis.set_ylabel("Age (ka)")
         self.canvas.draw()
