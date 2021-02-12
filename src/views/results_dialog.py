@@ -12,11 +12,14 @@ from views.age_results_widget import AgeResultsWidget
 
 class ResultsDialog(QDialog):
     configuration_changed = pyqtSignal()
+    mass_peak_selection_changed = pyqtSignal()
 
     def __init__(self, samples, default_config, ensure_config_calculated_callback):
         QDialog.__init__(self)
         self.samples = samples
         self.ensure_config_calculated_callback = ensure_config_calculated_callback
+        self.mass_peaks_selected = []
+        self.mass_peak_check_boxes = []
 
         # Right widget has to be created first as tabs depend on sample tree - so that must be instantiated first.
         right_widget = self._create_right_widget()
@@ -69,17 +72,19 @@ class ResultsDialog(QDialog):
         return layout
 
     def make_mass_check_boxes(self, samples):
-
-        for sample in samples:
-            for spot in sample.spots:
-                masses = spot.mpNames
+        sample = samples[0]
+        masses = sample.spots[0].mpNames
 
         checkbox_layout = QGridLayout()
 
         for i, mass in enumerate(masses):
             box = QCheckBox(mass)
+            box.mass_peak = mass
+            box.setChecked(True)
+            box.stateChanged.connect(self.on_mass_peak_selection_changed)
             checkbox_layout.addWidget(box, i // 3, i % 3)
-
+            self.mass_peaks_selected.append(mass)
+            self.mass_peak_check_boxes.append(box)
         return checkbox_layout
 
     # TODO fix this:
@@ -105,3 +110,11 @@ class ResultsDialog(QDialog):
         self.ensure_config_calculated_callback(config)
 
         self.configuration_changed.emit()
+
+    def on_mass_peak_selection_changed(self):
+        self.mass_peaks_selected.clear()
+        for box in self.mass_peak_check_boxes:
+            if box.isChecked():
+                self.mass_peaks_selected.append(box.mass_peak)
+
+        self.mass_peak_selection_changed.emit()

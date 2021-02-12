@@ -109,7 +109,12 @@ class Spot:
 				background_over_all_scans = []
 				for row in mp.rows:
 					background_over_all_scans.extend(row.data[config][DataKey.CPS])
-				mean_background, st_dev_background = calculate_outlier_resistant_mean_and_st_dev(background_over_all_scans, 20)
+				mean_for_initial_filter = np.mean(background_over_all_scans)
+				st_dev_for_initial_filter = np.std(background_over_all_scans)
+				outlier_min = mean_for_initial_filter - st_dev_for_initial_filter * 3
+				outlier_max = mean_for_initial_filter + st_dev_for_initial_filter * 3
+				background_over_all_scans_filtered = [i for i in background_over_all_scans if outlier_min < i < outlier_max]
+				mean_background, st_dev_background = calculate_outlier_resistant_mean_and_st_dev(background_over_all_scans_filtered, 20)
 				overall_stats = mean_background, st_dev_background
 
 			mp.calculate_outlier_resistant_mean_st_dev_for_rows(config, overall_stats)

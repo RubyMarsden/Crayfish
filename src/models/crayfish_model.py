@@ -81,7 +81,7 @@ class CrayfishModel():
     ################
     def process_samples(self):
         configs = self.create_configurations()
-        samples = self.samples_by_name.values()
+        samples = list(self.samples_by_name.values())
         self.setup_new_calculation(configs)
 
         equilibrium_standards = self.view.ask_user_for_equilibrium_standards(samples, [])

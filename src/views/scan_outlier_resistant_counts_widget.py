@@ -14,10 +14,13 @@ class ScanOutlierResistantCountsWidget(QWidget):
 
         self.results_dialog = results_dialog
 
+        self.errorbars = []
+
         self.setLayout(self._create_widget())
 
         results_dialog.sample_tree.tree.currentItemChanged.connect(lambda i, j: self.replot_graph())
         results_dialog.configuration_changed.connect(self.replot_graph)
+        self.results_dialog.mass_peak_selection_changed.connect(self.update_mass_peaks_displayed)
 
     def _create_widget(self):
 
@@ -70,9 +73,35 @@ class ScanOutlierResistantCountsWidget(QWidget):
                 data_x.append(i)
                 data_y.append(y)
                 errors_y.append(y_error)
-            axis.errorbar(data_x, data_y, yerr=errors_y, linestyle="none", marker='', label=massPeak.mpName)
-            axis.legend(loc="upper left")
+            errorbars = axis.errorbar(data_x, data_y, yerr=errors_y, linestyle="none", marker='', label=massPeak.mpName)
+            errorbars.max_y = max([y + e for y, e in zip(data_y, errors_y)])
+            errorbars.min_y = min([y - e for y, e in zip(data_y, errors_y)])
+            self.errorbars.append(errorbars)
 
+        axis.legend(loc="upper left")
         axis.set_xlabel("Scan number")
         axis.set_ylabel("Counts per second")
+        self.canvas.draw()
+
+    def update_mass_peaks_displayed(self):
+        min_y = float("inf")
+        max_y = 0
+        for errorbars in self.errorbars:
+            data_line, caplines, barcollines = errorbars
+            if errorbars.get_label() in self.results_dialog.mass_peaks_selected:
+                alpha = 1
+                min_y = min(min_y, errorbars.min_y)
+                max_y = max(max_y, errorbars.max_y)
+            else:
+                alpha = 0
+            data_line.set_alpha(alpha)
+            for part in caplines:
+                part.set_alpha(alpha)
+            for part in barcollines:
+                part.set_alpha(alpha)
+
+        if min_y > max_y:
+            min_y = 0
+            max_y = 1
+        self.axes.set_ylim(min_y, max_y)
         self.canvas.draw()
