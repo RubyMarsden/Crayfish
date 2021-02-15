@@ -13,6 +13,7 @@ from views.age_results_widget import AgeResultsWidget
 class ResultsDialog(QDialog):
     configuration_changed = pyqtSignal()
     mass_peak_selection_changed = pyqtSignal()
+    spots_flagged_changed = pyqtSignal()
 
     def __init__(self, samples, default_config, ensure_config_calculated_callback):
         QDialog.__init__(self)
@@ -40,11 +41,12 @@ class ResultsDialog(QDialog):
         self.continue_button.clicked.connect(self.accept)
 
         self.sample_tree = SampleTreeWidget()
+        self.sample_tree.tree.currentItemChanged.connect(self.on_selected_sample_change)
 
         self.sample_flag_box = QCheckBox("Flag spot")
         self.sample_flag_box.setChecked(False)
 
-        # self.sample_flag_box.stateChanged.connect(self.on_flag_point_state_changed)
+        self.sample_flag_box.stateChanged.connect(self.on_flag_point_state_changed)
         layout = QVBoxLayout()
         layout.addWidget(self.sample_flag_box)
         layout.addWidget(self.sample_tree)
@@ -104,6 +106,11 @@ class ResultsDialog(QDialog):
     def on_flag_point_state_changed(self):
         sample = self.sample_tree.tree.currentItem()
         sample.spot.is_flagged = self.sample_flag_box.isChecked()
+        for sample in self.samples:
+            for spot in sample.spots:
+                if spot.is_flagged:
+                    print(spot.name)
+        self.configuration_changed.emit()
 
     def on_configuration_widget_state_changed(self):
         config = self.configuration_widget.current_config

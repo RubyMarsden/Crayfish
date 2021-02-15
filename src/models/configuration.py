@@ -1,8 +1,9 @@
 class Configuration:
-    def __init__(self, normalise_by_sbm, apply_primary_background_filter,background_method):
+    def __init__(self, normalise_by_sbm, apply_primary_background_filter, background_method):
         self.normalise_by_sbm: bool = normalise_by_sbm
         self.apply_primary_background_filter: bool = apply_primary_background_filter
         self.background_method = background_method
+        # self.flagged_samples = set_of_flagged_samples
 
         self.name = f"Normalised to sbm + {normalise_by_sbm} +" \
                     f" primary background filter applied + {self.apply_primary_background_filter} + " \

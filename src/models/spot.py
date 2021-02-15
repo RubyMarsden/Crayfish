@@ -105,19 +105,24 @@ class Spot:
 		for mp in self.massPeaks.values():
 			if mp.mpName in self.mpNamesNonBackground or not config.apply_primary_background_filter:
 				overall_stats = None
+				mp.calculate_outlier_resistant_mean_st_dev_for_rows(config, overall_stats)
 			else:
 				background_over_all_scans = []
 				for row in mp.rows:
 					background_over_all_scans.extend(row.data[config][DataKey.CPS])
-				mean_for_initial_filter = np.mean(background_over_all_scans)
-				st_dev_for_initial_filter = np.std(background_over_all_scans)
-				outlier_min = mean_for_initial_filter - st_dev_for_initial_filter * 3
-				outlier_max = mean_for_initial_filter + st_dev_for_initial_filter * 3
-				background_over_all_scans_filtered = [i for i in background_over_all_scans if outlier_min < i < outlier_max]
-				mean_background, st_dev_background = calculate_outlier_resistant_mean_and_st_dev(background_over_all_scans_filtered, 20)
+				mean_background = np.mean(background_over_all_scans)
+				st_dev_background = np.std(background_over_all_scans)
 				overall_stats = mean_background, st_dev_background
-
-			mp.calculate_outlier_resistant_mean_st_dev_for_rows(config, overall_stats)
+				mp.calculate_outlier_resistant_mean_st_dev_for_rows(config, overall_stats)
+				means = []
+				st_devs = []
+				for row in mp.rows:
+					mean, st_dev = row.data[config][DataKey.OUTLIER_RES_MEAN_STDEV]
+					means.append(mean)
+					st_devs.append(st_devs)
+				weighted_mean, weighted_st = calculate_error_weighted_mean_and_st_dev(means, st_devs)
+				for row in mp.rows:
+					row.data[config][DataKey.OUTLIER_RES_MEAN_STDEV] = weighted_mean, weighted_st
 
 	def background_correction(self, config, background1, background2):
 		for massPeak in self.massPeaks.values():

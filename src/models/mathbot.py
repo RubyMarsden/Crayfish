@@ -129,8 +129,22 @@ def calculate_age_from_values(x, dx, y, dy, w, dw, standard_line, standard_line_
 
 
 def calculate_error_weighted_mean_and_st_dev(values, errors):
-    inverseErrors = [1 / (error ** 2) for error in errors]
-    sigma = sum(inverseErrors)
-    weightedMean = (sum([value * inverseError for value, inverseError in zip(values, inverseErrors)])) / sigma
-    weightedStDev = math.sqrt(1 / sigma)
-    return weightedMean, weightedStDev
+    errors_not_zero = []
+    for error in errors:
+        if error != 0:
+            errors_not_zero.append(error)
+
+    for i, error in enumerate(errors):
+        if error == 0:
+            if len(errors_not_zero) != 0:
+                errors[i] = np.mean(errors_not_zero) / 10
+            else:
+                errors[i] = 0.001
+        else:
+            continue
+
+    inverse_errors = [1 / (error ** 2) for error in errors]
+    sigma = sum(inverse_errors)
+    weighted_mean = (sum([value * inverseError for value, inverseError in zip(values, inverse_errors)])) / sigma
+    weighted_st_dev = math.sqrt(1 / sigma)
+    return weighted_mean, weighted_st_dev

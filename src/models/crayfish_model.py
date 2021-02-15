@@ -106,8 +106,8 @@ class CrayfishModel():
 
         for config in configs:
             self.ensure_config_calculated(config)
-            self.export_results(config, samples, "output")
-            self.export_test_csv(config, samples)
+            # self.export_results(config, samples, "output")
+            # self.export_test_csv(config, samples)
 
     def create_configurations(self):
         configurations = []
@@ -137,6 +137,8 @@ class CrayfishModel():
         self.normalise_all_counts_to_cps(config, samples)
         self.calculate_outlier_resistant_mean_st_dev_for_row(config, samples)
         self.get_U_mean(config, samples)
+        # TODO
+        # self.get_limit_detection_difference(config, samples)
         self.background_correction(config, samples)
         self.calculate_activity_ratios(config, samples)
         self.standard_line_calculation(config, samples)
@@ -167,7 +169,10 @@ class CrayfishModel():
     def calculate_activity_ratios(self, config, samples):
         for sample in samples:
             for spot in sample.spots:
-                spot.calculate_activity_ratios(config)
+                if spot.is_flagged:
+                    spot.data[config][DataKey.ACTIVITY_RATIOS] = "Flagged spot"
+                else:
+                    spot.calculate_activity_ratios(config)
 
     def standard_line_calculation(self, config, samples):
         xs = []
@@ -214,14 +219,19 @@ class CrayfishModel():
             if sample.is_standard:
                 continue
             for spot in sample.spots:
-                spot.calculate_age_per_scan(
-                    config,
-                    sample.WR_activity_ratio,
-                    sample.WR_activity_ratio_uncertainty,
-                    gradient,
-                    gradient_uncertainty
-                )
-                spot.calculate_error_weighted_mean_and_st_dev_for_ages(config)
+                if spot.is_flagged:
+                    spot.data[config][DataKey.AGES] = "Spot is flagged"
+                    spot.data[config][DataKey.WEIGHTED_AGE] = ("Error! No ages to take weighted mean from.", "")
+
+                else:
+                    spot.calculate_age_per_scan(
+                        config,
+                        sample.WR_activity_ratio,
+                        sample.WR_activity_ratio_uncertainty,
+                        gradient,
+                        gradient_uncertainty
+                    )
+                    spot.calculate_error_weighted_mean_and_st_dev_for_ages(config)
 
     def get_U_mean(self, config, samples):
         for sample in samples:
