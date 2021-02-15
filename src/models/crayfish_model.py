@@ -136,11 +136,11 @@ class CrayfishModel():
         samples = self.samples_by_name.values()
         self.normalise_all_counts_to_cps(config, samples)
         self.calculate_outlier_resistant_mean_st_dev_for_row(config, samples)
+        self.get_U_mean(config, samples)
         self.background_correction(config, samples)
         self.calculate_activity_ratios(config, samples)
         self.standard_line_calculation(config, samples)
         self.calculate_ages_and_weighted_mean_age(config, samples)
-        self.get_U_mean(config, samples)
         self.configurations_calculated.add(config)
 
     def standardise_all_sbm_and_calculate_time_series(self, samples):
