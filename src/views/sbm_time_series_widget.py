@@ -63,7 +63,7 @@ class SBMTimeSeriesWidget(QWidget):
 
     def on_selected_sample_change(self, current_tree_item, previous_tree_item):
 
-        if current_tree_item is None:
+        if current_tree_item is None or current_tree_item.is_sample:
             self.axis.clear()
             return
 

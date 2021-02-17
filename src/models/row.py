@@ -20,10 +20,11 @@ class Row:
 
         self.data = {}
 
-    def setup_new_calculation(self, configurations):
-        self.data = {}
-        for config in configurations:
-            self.data[config] = {}
+    def clear_previous_calculations(self):
+        self.data.clear()
+
+    def setup_new_config_calculation(self, config):
+        self.data[config] = {}
 
     def __repr__(self):
         return self.name

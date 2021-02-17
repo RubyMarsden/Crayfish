@@ -139,7 +139,9 @@ def calculate_error_weighted_mean_and_st_dev(values, errors):
             if len(errors_not_zero) != 0:
                 errors[i] = np.mean(errors_not_zero) / 10
             else:
-                errors[i] = 0.001
+                weighted_mean = np.mean(values)
+                weighted_st_dev = 0
+                return weighted_mean, weighted_st_dev
         else:
             continue
 

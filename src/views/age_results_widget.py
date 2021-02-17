@@ -50,10 +50,10 @@ class AgeResultsWidget(QWidget):
     ###############
 
     def replot_graph(self):
-        current_item = self.results_dialog.sample_tree.tree.currentItem()
+        current_spot = self.results_dialog.sample_tree.current_spot()
         config = self.results_dialog.configuration_widget.current_config
-        if config and current_item:
-            self.plot_cps_graph(current_item.spot, config)
+        if config and current_spot:
+            self.plot_cps_graph(current_spot, config)
 
     def plot_cps_graph(self, spot, config):
         axis = self.axes

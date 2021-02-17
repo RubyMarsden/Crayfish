@@ -56,15 +56,17 @@ class cpsTimeSeriesWidget(QWidget):
     ## Actions ##
     #############
     def replot_graph(self):
-        current_item = self.results_dialog.sample_tree.tree.currentItem()
+        current_spot = self.results_dialog.sample_tree.current_spot()
         config = self.results_dialog.configuration_widget.current_config
-        if config and current_item:
-            self.plot_cps_graph(current_item.spot.massPeaks, config)
+        if config and current_spot:
+            self.plot_cps_graph(current_spot.massPeaks, config)
             self.update_mass_peaks_displayed()
 
     def plot_cps_graph(self, mass_peaks, config):
         axis = self.axes
         axis.clear()
+        self.lines.clear()
+
         axis.spines['top'].set_visible(False)
         axis.spines['right'].set_visible(False)
         for massPeak in mass_peaks.values():

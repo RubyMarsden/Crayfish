@@ -16,6 +16,7 @@ class StandardLineWidget(QWidget):
         self.results_dialog = results_dialog
 
         self.samples = [sample for sample in self.results_dialog.samples if sample.is_standard]
+        self.model_data = results_dialog.model_data
 
         layout = QHBoxLayout()
         layout.addLayout(self._create_widget())
@@ -53,9 +54,9 @@ class StandardLineWidget(QWidget):
         current_item = self.results_dialog.sample_tree.tree.currentItem()
         config = self.results_dialog.configuration_widget.current_config
         if config and current_item:
-            self.plot_standard_line_graph(current_item.spot, config)
+            self.plot_standard_line_graph(config)
 
-    def plot_standard_line_graph(self, spot, config):
+    def plot_standard_line_graph(self, config):
         axis = self.axes
         axis.clear()
         axis.spines['top'].set_visible(False)
@@ -78,6 +79,10 @@ class StandardLineWidget(QWidget):
                     ys.append(y)
                     y_errors.append(dy)
         axis.errorbar(xs, ys, xerr=x_errors, yerr=y_errors, linestyle='none', marker='o')
+        standard_line, standard_line_uncertainty = self.model_data[config][DataKey.STANDARD_LINE_GRADIENT]
+        standard_line_MSWD = self.model_data[config][DataKey.STANDARD_LINE_MSWD]
+        string = f"Standard line gradient: {standard_line} Uncertainty: {standard_line_uncertainty} MSWD: {standard_line_MSWD}"
+        axis.text(0.5, 1, string, transform=axis.transAxes, horizontalalignment="center")
         axis.set_xlabel("(238U)/(232Th)")
         axis.set_ylabel("(230Th)/(232Th)")
         self.canvas.draw()

@@ -1,6 +1,7 @@
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import QDialog, QTabWidget, QVBoxLayout, QPushButton, QHBoxLayout, QCheckBox, QWidget, QGridLayout
 
+from models.configuration import Configuration
 from views.configuration_widget import ConfigurationWidget
 from views.sample_tree import SampleTreeWidget
 from views.sbm_time_series_widget import SBMTimeSeriesWidget
@@ -15,48 +16,44 @@ class ResultsDialog(QDialog):
     mass_peak_selection_changed = pyqtSignal()
     spots_flagged_changed = pyqtSignal()
 
-    def __init__(self, samples, default_config, ensure_config_calculated_callback):
+    def __init__(self, samples, default_config, ensure_config_calculated_callback, model_data):
         QDialog.__init__(self)
         self.samples = samples
         self.ensure_config_calculated_callback = ensure_config_calculated_callback
+        self.model_data = model_data
         self.mass_peaks_selected = []
         self.mass_peak_check_boxes = []
 
-        # Right widget has to be created first as tabs depend on sample tree - so that must be instantiated first.
-        right_widget = self._create_right_widget()
-        left_widget = self._create_left_widget(samples)
+        # Sample tree widget has to be created first as configuration widget depends on it. Widgets within the
+        # configuration widget are in both the right and left layouts.
+        self.sample_tree = SampleTreeWidget()
+        self.configuration_widget = ConfigurationWidget(self.sample_tree)
+
+        right_layout = self._create_right_layout()
+        left_layout = self._create_left_layout(samples)
 
         layout = QHBoxLayout()
-        layout.addLayout(left_widget)
-        layout.addLayout(right_widget)
+        layout.addLayout(left_layout)
+        layout.addLayout(right_layout)
         self.setLayout(layout)
 
-        self.configuration_widget.configuration_state_changed.connect(self.on_configuration_widget_state_changed)
+        self.configuration_widget.state_changed.connect(self.on_configuration_widget_state_changed)
 
         self.configuration_widget.set_state(default_config)
         self.sample_tree.set_samples(samples)
 
-    def _create_right_widget(self):
+    def _create_right_layout(self):
         self.continue_button = QPushButton("Continue")
         self.continue_button.clicked.connect(self.accept)
 
-        self.sample_tree = SampleTreeWidget()
-        self.sample_tree.tree.currentItemChanged.connect(self.on_selected_sample_change)
-
-        self.sample_flag_box = QCheckBox("Flag spot")
-        self.sample_flag_box.setChecked(False)
-
-        self.sample_flag_box.stateChanged.connect(self.on_flag_point_state_changed)
         layout = QVBoxLayout()
-        layout.addWidget(self.sample_flag_box)
+        layout.addWidget(self.configuration_widget.exclude_spot_checkbox)
         layout.addWidget(self.sample_tree)
         layout.addWidget(self.continue_button, alignment=Qt.AlignRight)
 
         return layout
 
-    def _create_left_widget(self, samples):
-        self.configuration_widget = ConfigurationWidget()
-
+    def _create_left_layout(self, samples):
         self.tabs = QTabWidget()
         self.tabs.addTab(SBMTimeSeriesWidget(self), "1. SBM time series")
         self.tabs.addTab(cpsTimeSeriesWidget(self), "2. Counts per second")
@@ -89,33 +86,12 @@ class ResultsDialog(QDialog):
             self.mass_peak_check_boxes.append(box)
         return checkbox_layout
 
-    # TODO fix this:
-    def on_selected_sample_change(self, current_tree_item, previous_tree_item):
-        if current_tree_item is None:
-            self.axis.clear()
-            return
-
-        if current_tree_item.is_sample:
-            self.sample_flag_box.setVisible(False)
-            return
-
-        self.sample_flag_box.setVisible(True)
-        self.sample_flag_box.setChecked(current_tree_item.spot.is_flagged)
-
-    # TODO fix this:
-    def on_flag_point_state_changed(self):
-        sample = self.sample_tree.tree.currentItem()
-        sample.spot.is_flagged = self.sample_flag_box.isChecked()
-        for sample in self.samples:
-            for spot in sample.spots:
-                if spot.is_flagged:
-                    print(spot.name)
-        self.configuration_changed.emit()
+    ###########
+    # Actions #
+    ###########
 
     def on_configuration_widget_state_changed(self):
-        config = self.configuration_widget.current_config
-        self.ensure_config_calculated_callback(config)
-
+        self.ensure_config_calculated_callback(self.configuration_widget.current_config)
         self.configuration_changed.emit()
 
     def on_mass_peak_selection_changed(self):
@@ -125,3 +101,4 @@ class ResultsDialog(QDialog):
                 self.mass_peaks_selected.append(box.mass_peak)
 
         self.mass_peak_selection_changed.emit()
+

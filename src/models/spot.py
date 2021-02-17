@@ -54,13 +54,17 @@ class Spot:
 
 		self.is_flagged = False
 
-	def setup_new_calculation(self, configurations):
-		self.data = {}
-		for config in configurations:
-			self.data[config] = {}
+	def clear_previous_calculations(self):
+		self.data.clear()
 		for mp in self.massPeaks.values():
 			for row in mp.rows:
-				row.setup_new_calculation(configurations)
+				row.clear_previous_calculations()
+
+	def setup_new_config_calculation(self, config):
+		self.data[config] = {}
+		for mp in self.massPeaks.values():
+			for row in mp.rows:
+				row.setup_new_config_calculation(config)
 
 	def _parse_datetime(self, date_str, time_str):
 		date = self._parse_date(date_str)
@@ -103,23 +107,26 @@ class Spot:
 
 	def calculate_outlier_resistant_mean_st_dev_for_rows(self, config):
 		for mp in self.massPeaks.values():
-			if mp.mpName in self.mpNamesNonBackground or not config.apply_primary_background_filter:
+			if mp.mpName in self.mpNamesNonBackground:
 				overall_stats = None
 				mp.calculate_outlier_resistant_mean_st_dev_for_rows(config, overall_stats)
 			else:
-				background_over_all_scans = []
-				for row in mp.rows:
-					background_over_all_scans.extend(row.data[config][DataKey.CPS])
-				mean_background = np.mean(background_over_all_scans)
-				st_dev_background = np.std(background_over_all_scans)
-				overall_stats = mean_background, st_dev_background
+				if config.apply_primary_background_filter:
+					background_over_all_scans = []
+					for row in mp.rows:
+						background_over_all_scans.extend(row.data[config][DataKey.CPS])
+					mean_background = np.mean(background_over_all_scans)
+					st_dev_background = np.std(background_over_all_scans)
+					overall_stats = mean_background, st_dev_background
+				else:
+					overall_stats = None
 				mp.calculate_outlier_resistant_mean_st_dev_for_rows(config, overall_stats)
 				means = []
 				st_devs = []
 				for row in mp.rows:
 					mean, st_dev = row.data[config][DataKey.OUTLIER_RES_MEAN_STDEV]
 					means.append(mean)
-					st_devs.append(st_devs)
+					st_devs.append(st_dev)
 				weighted_mean, weighted_st = calculate_error_weighted_mean_and_st_dev(means, st_devs)
 				for row in mp.rows:
 					row.data[config][DataKey.OUTLIER_RES_MEAN_STDEV] = weighted_mean, weighted_st

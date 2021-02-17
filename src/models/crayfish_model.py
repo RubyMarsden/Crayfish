@@ -80,10 +80,9 @@ class CrayfishModel():
     ## Processing ##
     ################
     def process_samples(self):
-        configs = self.create_configurations()
-        samples = list(self.samples_by_name.values())
-        self.setup_new_calculation(configs)
+        self.clear_previous_calculations()
 
+        samples = list(self.samples_by_name.values())
         equilibrium_standards = self.view.ask_user_for_equilibrium_standards(samples, [])
         if equilibrium_standards is None:
             return
@@ -100,39 +99,39 @@ class CrayfishModel():
 
         self.standardise_all_sbm_and_calculate_time_series(samples)
 
-        default_config = configs[0]
+        default_config = Configuration(
+            normalise_by_sbm=True,
+            apply_primary_background_filter=True,
+            background_method=BackgroundCorrection.EXP,
+            excluded_spots=frozenset()
+        )
 
-        self.view.show_user_results(samples, default_config, self.ensure_config_calculated)
+        self.view.show_user_results(samples, default_config, self.ensure_config_calculated, self.data)
 
-        for config in configs:
-            self.ensure_config_calculated(config)
-            # self.export_results(config, samples, "output")
-            # self.export_test_csv(config, samples)
+        # TODO export current config
+        # self.export_results(config, samples, "output")
+        # self.export_test_csv(config, samples)
 
-    def create_configurations(self):
-        configurations = []
-        for method in BackgroundCorrection:
-            for normalise_by_sbm in (True, False):
-                for apply_primary_background_filter in (True, False):
-                    configuration = Configuration(normalise_by_sbm, apply_primary_background_filter, method)
-                    configurations.append(configuration)
-
-        return configurations
-
-    def setup_new_calculation(self, configurations):
+    def clear_previous_calculations(self):
         self.data.clear()
         self.configurations_calculated.clear()
-        for config in configurations:
-            self.data[config] = {}
         for sample in self.samples_by_name.values():
             for spot in sample.spots:
-                spot.setup_new_calculation(configurations)
+                spot.clear_previous_calculations()
+
+    def setup_new_config_calculation(self, config):
+        self.data[config] = {}
+        self.configurations_calculated.add(config)
+        for sample in self.samples_by_name.values():
+            for spot in sample.spots:
+                spot.setup_new_config_calculation(config)
 
     def ensure_config_calculated(self, config):
         if config not in self.configurations_calculated:
             self.calculate_for_config(config)
 
     def calculate_for_config(self, config):
+        self.setup_new_config_calculation(config)
         samples = self.samples_by_name.values()
         self.normalise_all_counts_to_cps(config, samples)
         self.calculate_outlier_resistant_mean_st_dev_for_row(config, samples)
@@ -143,7 +142,6 @@ class CrayfishModel():
         self.calculate_activity_ratios(config, samples)
         self.standard_line_calculation(config, samples)
         self.calculate_ages_and_weighted_mean_age(config, samples)
-        self.configurations_calculated.add(config)
 
     def standardise_all_sbm_and_calculate_time_series(self, samples):
         for sample in samples:
@@ -169,8 +167,8 @@ class CrayfishModel():
     def calculate_activity_ratios(self, config, samples):
         for sample in samples:
             for spot in sample.spots:
-                if spot.is_flagged:
-                    spot.data[config][DataKey.ACTIVITY_RATIOS] = "Flagged spot"
+                if spot in config.excluded_spots:
+                    spot.data[config][DataKey.ACTIVITY_RATIOS] = "Excluded spot"
                 else:
                     spot.calculate_activity_ratios(config)
 
@@ -219,8 +217,8 @@ class CrayfishModel():
             if sample.is_standard:
                 continue
             for spot in sample.spots:
-                if spot.is_flagged:
-                    spot.data[config][DataKey.AGES] = "Spot is flagged"
+                if spot in config.excluded_spots:
+                    spot.data[config][DataKey.AGES] = "Spot is excluded"
                     spot.data[config][DataKey.WEIGHTED_AGE] = ("Error! No ages to take weighted mean from.", "")
 
                 else:

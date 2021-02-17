@@ -55,6 +55,12 @@ class SampleTreeWidget(QWidget):
 
         return widget
 
+    def current_spot(self):
+        current_item = self.tree.currentItem()
+        if current_item is None or current_item.is_sample:
+            return None
+        return current_item.spot
+
     #######
     #Actions
     #######
