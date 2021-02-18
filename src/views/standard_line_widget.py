@@ -59,6 +59,7 @@ class StandardLineWidget(QWidget):
     def plot_standard_line_graph(self, config):
         axis = self.axes
         axis.clear()
+
         axis.spines['top'].set_visible(False)
         axis.spines['right'].set_visible(False)
         xs = []
@@ -67,7 +68,10 @@ class StandardLineWidget(QWidget):
         y_errors = []
         for sample in self.samples:
             for spot in sample.spots:
-                ratios = spot.data[config][DataKey.ACTIVITY_RATIOS]
+                if config.weighted_mean_standard_activity_ratios:
+                    ratios = spot.data[config][DataKey.WEIGHTED_ACTIVITY_RATIO]
+                else:
+                    ratios = spot.data[config][DataKey.ACTIVITY_RATIOS]
                 if len(ratios) == 0:
                     continue
                 for ratio in ratios:

@@ -16,11 +16,12 @@ class ResultsDialog(QDialog):
     mass_peak_selection_changed = pyqtSignal()
     spots_flagged_changed = pyqtSignal()
 
-    def __init__(self, samples, default_config, ensure_config_calculated_callback, model_data):
+    def __init__(self, samples, default_config, ensure_config_calculated_callback, model_data, export_data_callback):
         QDialog.__init__(self)
         self.samples = samples
         self.ensure_config_calculated_callback = ensure_config_calculated_callback
         self.model_data = model_data
+        self.export_data_callback = export_data_callback
         self.mass_peaks_selected = []
         self.mass_peak_check_boxes = []
 
@@ -43,13 +44,13 @@ class ResultsDialog(QDialog):
         self.sample_tree.set_samples(samples)
 
     def _create_right_layout(self):
-        self.continue_button = QPushButton("Continue")
-        self.continue_button.clicked.connect(self.accept)
+        self.export_button = QPushButton("Export")
+        self.export_button.clicked.connect(self.on_export_button_pushed)
 
         layout = QVBoxLayout()
         layout.addWidget(self.configuration_widget.exclude_spot_checkbox)
         layout.addWidget(self.sample_tree)
-        layout.addWidget(self.continue_button, alignment=Qt.AlignRight)
+        layout.addWidget(self.export_button, alignment=Qt.AlignRight)
 
         return layout
 
@@ -101,4 +102,8 @@ class ResultsDialog(QDialog):
                 self.mass_peaks_selected.append(box.mass_peak)
 
         self.mass_peak_selection_changed.emit()
+
+    def on_export_button_pushed(self):
+        current_config = self.configuration_widget.current_config
+        self.export_data_callback(current_config, self.samples, "output")
 

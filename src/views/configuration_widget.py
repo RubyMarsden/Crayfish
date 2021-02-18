@@ -26,8 +26,11 @@ class ConfigurationWidget(QWidget):
         self.sbm_check_box = QCheckBox("Normalise to sbm")
         self.sbm_check_box.stateChanged.connect(self.on_state_changed)
 
-        self.scan_wide_background_check_box = QCheckBox("Apply primary filter to background counts")
-        self.scan_wide_background_check_box.stateChanged.connect(self.on_state_changed)
+        self.apply_primary_background_filter_check_box = QCheckBox("Apply primary filter to background counts")
+        self.apply_primary_background_filter_check_box.stateChanged.connect(self.on_state_changed)
+
+        self.use_weighted_mean_standard_activity_ratios_checkbox = QCheckBox("Use weighted mean standard activity ratios")
+        self.use_weighted_mean_standard_activity_ratios_checkbox.stateChanged.connect(self.on_state_changed)
 
         self.background_button_group = QButtonGroup()
         self.buttons = []
@@ -42,7 +45,8 @@ class ConfigurationWidget(QWidget):
         layout = QHBoxLayout()
         # The exclude spot widget is displayed elsewhere
         layout.addWidget(self.sbm_check_box)
-        layout.addWidget(self.scan_wide_background_check_box)
+        layout.addWidget(self.apply_primary_background_filter_check_box)
+        layout.addWidget(self.use_weighted_mean_standard_activity_ratios_checkbox)
         for button in self.buttons:
             layout.addWidget(button)
 
@@ -53,7 +57,8 @@ class ConfigurationWidget(QWidget):
         for button in self.buttons:
             button.setChecked(button.method == config.background_method)
         self.sbm_check_box.setChecked(config.normalise_by_sbm)
-        self.scan_wide_background_check_box.setChecked(config.apply_primary_background_filter)
+        self.apply_primary_background_filter_check_box.setChecked(config.apply_primary_background_filter)
+        self.use_weighted_mean_standard_activity_ratios_checkbox.setChecked(config.weighted_mean_standard_activity_ratios)
         self.update_exclude_spot_checkbox(config)
         self.blockSignals(False)
         self.on_state_changed()
@@ -108,10 +113,17 @@ class ConfigurationWidget(QWidget):
 
     def on_state_changed(self):
         sbm_normalised = self.sbm_check_box.isChecked()
-        apply_scan_wide_background = self.scan_wide_background_check_box.isChecked()
+        apply_scan_wide_background = self.apply_primary_background_filter_check_box.isChecked()
         background_method = self.background_button_group.checkedButton().method
+        use_weighted_mean_standard_activity_ratios = self.use_weighted_mean_standard_activity_ratios_checkbox.isChecked()
         excluded_spots = self.calculate_current_excluded_spots()
-        self.current_config = Configuration(sbm_normalised, apply_scan_wide_background, background_method, excluded_spots)
+        self.current_config = Configuration(
+            sbm_normalised,
+            apply_scan_wide_background,
+            background_method,
+            excluded_spots,
+            use_weighted_mean_standard_activity_ratios
+        )
         self.state_changed.emit()
         
         

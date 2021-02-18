@@ -5,6 +5,7 @@ from PyQt5.QtCore import pyqtSignal, QObject
 from models.background_method import BackgroundCorrection
 from models.configuration import Configuration
 from models.data_key import DataKey
+from models.mathbot import calculate_error_weighted_mean_and_st_dev
 from models.sample import Sample
 from models.settings import NONBACKGROUND
 from models.spot import Spot, BACKGROUND1, BACKGROUND2
@@ -103,13 +104,12 @@ class CrayfishModel():
             normalise_by_sbm=True,
             apply_primary_background_filter=True,
             background_method=BackgroundCorrection.EXP,
-            excluded_spots=frozenset()
+            excluded_spots=frozenset(),
+            weighted_mean_standard_activity_ratios=True
         )
 
-        self.view.show_user_results(samples, default_config, self.ensure_config_calculated, self.data)
+        self.view.show_user_results(samples, default_config, self.ensure_config_calculated, self.data, self.export_results)
 
-        # TODO export current config
-        # self.export_results(config, samples, "output")
         # self.export_test_csv(config, samples)
 
     def clear_previous_calculations(self):
@@ -182,14 +182,39 @@ class CrayfishModel():
                 continue
             for spot in sample.spots:
                 activity_ratios = spot.data[config][DataKey.ACTIVITY_RATIOS]
-                for ratio in activity_ratios:
-                    if isinstance(ratio, str):
+                if config.weighted_mean_standard_activity_ratios:
+                    if spot in config.excluded_spots:
+                        spot.data[config][DataKey.WEIGHTED_ACTIVITY_RATIO] = "Spot not included"
                         continue
-                    (x, dx), (y, dy) = ratio
-                    xs.append(x)
-                    dxs.append(dx)
-                    ys.append(y)
-                    dys.append(dy)
+                    else:
+                        spot_xs = []
+                        spot_ys = []
+                        spot_dxs = []
+                        spot_dys = []
+                        for ratio in activity_ratios:
+                            if isinstance(ratio, str):
+                                continue
+                            (x, dx), (y, dy) = ratio
+                            spot_xs.append(x)
+                            spot_dxs.append(dx)
+                            spot_ys.append(y)
+                            spot_dys.append(dy)
+                        weighted_x, x_error = calculate_error_weighted_mean_and_st_dev(spot_xs, spot_dxs)
+                        weighted_y, y_error = calculate_error_weighted_mean_and_st_dev(spot_ys, spot_dys)
+                        spot.data[config][DataKey.WEIGHTED_ACTIVITY_RATIO] = [((weighted_x, x_error), (weighted_y, y_error))]
+                    xs.append(weighted_x)
+                    dxs.append(x_error)
+                    ys.append(weighted_y)
+                    dys.append(y_error)
+                else:
+                    for ratio in activity_ratios:
+                        if isinstance(ratio, str):
+                            continue
+                        (x, dx), (y, dy) = ratio
+                        xs.append(x)
+                        dxs.append(dx)
+                        ys.append(y)
+                        dys.append(dy)
 
             # Fixing through the 0,0 point
             xs.append(0), dxs.append(0.00001), ys.append(0), dys.append(0.00001)
@@ -202,7 +227,7 @@ class CrayfishModel():
         a, b, S, cov_matrix = bivariate_fit(data_in_xs, data_in_ys, data_in_dxs, data_in_dys)
 
         # From York 2004 - This quantity,S = SUM(Wi(Yi-bXi-a)^2, is the same one minimized in the least-squares
-        # formulation of the fitting problem.4 If n points are being fitted, the expected value of S has a x^2
+        # formulation of the fitting problem. If n points are being fitted, the expected value of S has a x^2
         # distribution for n-2 degrees of freedom, so that the expected value of S/(n-2) is unity. Here - as we've taken
         # away a degree of freedom by fixing through x, y = 0, 0 S/(n-3) is used instead.
         MSWD = S / (len(xs) - 3)

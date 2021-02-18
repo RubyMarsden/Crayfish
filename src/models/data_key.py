@@ -12,6 +12,7 @@ class DataKey(Enum):
 
     ### SPOT ###
     ACTIVITY_RATIOS = "activity ratios"
+    WEIGHTED_ACTIVITY_RATIO = "weighted activity ratio"
     AGES = "ages"
     WEIGHTED_AGE = "weighted age"
     U_CONCENTRATION = "weighted U cps"
