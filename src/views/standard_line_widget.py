@@ -68,10 +68,7 @@ class StandardLineWidget(QWidget):
         y_errors = []
         for sample in self.samples:
             for spot in sample.spots:
-                if config.weighted_mean_standard_activity_ratios:
-                    ratios = spot.data[config][DataKey.WEIGHTED_ACTIVITY_RATIO]
-                else:
-                    ratios = spot.data[config][DataKey.ACTIVITY_RATIOS]
+                ratios = spot.data[config][DataKey.ACTIVITY_RATIOS]
                 if len(ratios) == 0:
                     continue
                 for ratio in ratios:

@@ -104,8 +104,7 @@ class CrayfishModel():
             normalise_by_sbm=True,
             apply_primary_background_filter=True,
             background_method=BackgroundCorrection.EXP,
-            excluded_spots=frozenset(),
-            weighted_mean_standard_activity_ratios=True
+            excluded_spots=frozenset()
         )
 
         self.view.show_user_results(samples, default_config, self.ensure_config_calculated, self.data, self.export_results)
@@ -180,44 +179,33 @@ class CrayfishModel():
         for sample in samples:
             if not sample.is_standard:
                 continue
-            for spot in sample.spots:
-                activity_ratios = spot.data[config][DataKey.ACTIVITY_RATIOS]
-                if config.weighted_mean_standard_activity_ratios:
-                    if spot in config.excluded_spots:
-                        spot.data[config][DataKey.WEIGHTED_ACTIVITY_RATIO] = "Spot not included"
-                        continue
-                    else:
-                        spot_xs = []
-                        spot_ys = []
-                        spot_dxs = []
-                        spot_dys = []
-                        for ratio in activity_ratios:
-                            if isinstance(ratio, str):
-                                continue
-                            (x, dx), (y, dy) = ratio
-                            spot_xs.append(x)
-                            spot_dxs.append(dx)
-                            spot_ys.append(y)
-                            spot_dys.append(dy)
-                        weighted_x, x_error = calculate_error_weighted_mean_and_st_dev(spot_xs, spot_dxs)
-                        weighted_y, y_error = calculate_error_weighted_mean_and_st_dev(spot_ys, spot_dys)
-                        spot.data[config][DataKey.WEIGHTED_ACTIVITY_RATIO] = [((weighted_x, x_error), (weighted_y, y_error))]
-                    xs.append(weighted_x)
-                    dxs.append(x_error)
-                    ys.append(weighted_y)
-                    dys.append(y_error)
-                else:
-                    for ratio in activity_ratios:
-                        if isinstance(ratio, str):
-                            continue
-                        (x, dx), (y, dy) = ratio
-                        xs.append(x)
-                        dxs.append(dx)
-                        ys.append(y)
-                        dys.append(dy)
 
-            # Fixing through the 0,0 point
-            xs.append(0), dxs.append(0.00001), ys.append(0), dys.append(0.00001)
+            for spot in sample.spots:
+                if spot in config.excluded_spots:
+                    spot.data[config][DataKey.WEIGHTED_ACTIVITY_RATIO] = "Spot not included"
+                    continue
+
+                activity_ratios = spot.data[config][DataKey.ACTIVITY_RATIOS]
+                spot_xs = []
+                spot_ys = []
+                spot_dxs = []
+                spot_dys = []
+                for ratio in activity_ratios:
+                    if isinstance(ratio, str):
+                        continue
+                    (x, dx), (y, dy) = ratio
+                    spot_xs.append(x)
+                    spot_dxs.append(dx)
+                    spot_ys.append(y)
+                    spot_dys.append(dy)
+
+                xs.extend(spot_xs)
+                dxs.extend(spot_dxs)
+                ys.extend(spot_ys)
+                dys.extend(spot_dys)
+
+        # Fixing through the 0,0 point
+        xs.append(0), dxs.append(0.00001), ys.append(0), dys.append(0.00001)
 
         data_in_xs = np.array(xs)
         data_in_ys = np.array(ys)
@@ -259,6 +247,9 @@ class CrayfishModel():
     def get_U_mean(self, config, samples):
         for sample in samples:
             for spot in sample.spots:
+                if spot in config.excluded_spots:
+                    spot.data[config][DataKey.U_CONCENTRATION] = "Excluded spot"
+                    continue
                 spot.calculate_error_weighted_mean_and_st_dev_U_cps(config)
 
     def manual_whole_rock_values(self, samples):

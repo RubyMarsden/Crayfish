@@ -133,17 +133,17 @@ def calculate_error_weighted_mean_and_st_dev(values, errors):
     for error in errors:
         if error != 0:
             errors_not_zero.append(error)
-
+    # TODO fix this
     for i, error in enumerate(errors):
-        if error == 0:
-            if len(errors_not_zero) != 0:
-                errors[i] = np.mean(errors_not_zero) / 10
-            else:
-                weighted_mean = np.mean(values)
-                weighted_st_dev = 0
-                return weighted_mean, weighted_st_dev
-        else:
+        if error != 0:
             continue
+
+        if len(errors_not_zero) != 0:
+            errors[i] = np.mean(errors_not_zero) / 10
+        else:
+            weighted_mean = np.mean(values)
+            weighted_st_dev = 0
+            return weighted_mean, weighted_st_dev
 
     inverse_errors = [1 / (error ** 2) for error in errors]
     sigma = sum(inverse_errors)
