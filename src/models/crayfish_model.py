@@ -39,7 +39,7 @@ class CrayfishModel():
         if file_name in self.imported_files:
             raise Exception("This file has already been imported")
 
-        spots = self._parse_csv_file_into_spots(file_name)
+        spots = self._parse_pd_file_into_spots(file_name)
 
         self._add_samples_from_spots(spots)
         self.imported_files.append(file_name)
@@ -67,6 +67,39 @@ class CrayfishModel():
                 current_line_number = current_line_number + 1
             spot = Spot(spot_data)
             spots.append(spot)
+            spot_data = []
+            current_line_number += 1
+        return spots
+
+    def _parse_pd_file_into_spots(self, filename):
+        file = open(filename, "rt")
+        pd_file_data = file.readlines()
+        pd_data = []
+        for line in pd_file_data:
+            # line is a string
+            # Make line split into words - by using comma and spaces together - make into list of lists
+            line_list = [word.replace(",", "") for word in line.split()]
+            pd_data.append(line_list)
+
+        print(pd_data)
+
+        # finding the first spot
+        current_line_number = 0;
+        while pd_data[current_line_number] != ["***"]:
+            print(current_line_number)
+            current_line_number += 1
+        current_line_number += 1
+
+        # making a list of spots (it's empty now)
+        spots = []
+        spot_data = []
+        while current_line_number < len(pd_data):
+            while current_line_number < len(pd_data) and pd_data[current_line_number] != ["***"]:
+                spot_data.append(pd_data[current_line_number])
+                current_line_number = current_line_number + 1
+            spot = Spot(spot_data)
+            spots.append(spot)
+            print(spot_data)
             spot_data = []
             current_line_number += 1
         return spots

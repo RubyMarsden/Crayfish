@@ -24,7 +24,7 @@ class Spot:
 		self.mpNamesBackground = [BACKGROUND1, BACKGROUND2]
 		self.mpNamesNonBackground = [name for name in self.mpNames if name not in self.mpNamesBackground]
 		self.uranium_peak_name = self.find_uranium_peak_name()
-		self.mpCountTimes = {self.mpNames[i] : int(spot_data[i + 4][3]) for i in range(0, self.numberOfPeaks)}
+		self.mpCountTimes = {self.mpNames[i] : int(float(spot_data[i + 4][3])) for i in range(0, self.numberOfPeaks)}
 
 		self.massPeaks = {}
 		self.data = {}
@@ -79,7 +79,7 @@ class Spot:
 		return datetime(date.year, date.month, date.day, hour, minute, second)
 
 	def _parse_date(self, date_str):
-		for fmt in ('%Y-%m-%d,', '%d/%m/%Y'):
+		for fmt in ('%Y-%m-%d', '%d/%m/%Y'):
 			try:
 				return datetime.strptime(date_str, fmt)
 			except ValueError:
