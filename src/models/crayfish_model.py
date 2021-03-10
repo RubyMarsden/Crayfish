@@ -81,12 +81,9 @@ class CrayfishModel():
             line_list = [word.replace(",", "") for word in line.split()]
             pd_data.append(line_list)
 
-        print(pd_data)
-
         # finding the first spot
         current_line_number = 0;
         while pd_data[current_line_number] != ["***"]:
-            print(current_line_number)
             current_line_number += 1
         current_line_number += 1
 
@@ -99,7 +96,6 @@ class CrayfishModel():
                 current_line_number = current_line_number + 1
             spot = Spot(spot_data)
             spots.append(spot)
-            print(spot_data)
             spot_data = []
             current_line_number += 1
         return spots
