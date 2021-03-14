@@ -47,30 +47,6 @@ class CrayfishModel():
         samples = list(self.samples_by_name.values())
         self.signals.sample_list_updated.emit(samples, self.imported_files)
 
-    def _parse_csv_file_into_spots(self, file_name):
-        # import csv of pd data
-        with open(file_name, newline='') as csvfile:
-            csv_string_data = list(csv.reader(csvfile))
-
-        # finding the first spot
-        current_line_number = 0;
-        while csv_string_data[current_line_number][0] != "***":
-            current_line_number += 1
-        current_line_number += 1
-
-        # making a list of spots (it's empty now)
-        spots = []
-        spot_data = []
-        while current_line_number < len(csv_string_data):
-            while current_line_number < len(csv_string_data) and csv_string_data[current_line_number][0] != "***":
-                spot_data.append(csv_string_data[current_line_number])
-                current_line_number = current_line_number + 1
-            spot = Spot(spot_data)
-            spots.append(spot)
-            spot_data = []
-            current_line_number += 1
-        return spots
-
     def _parse_pd_file_into_spots(self, filename):
         file = open(filename, "rt")
         pd_file_data = file.readlines()
