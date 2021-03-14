@@ -28,7 +28,7 @@ class SamplesOverview(QWidget):
         self.file_list = QTreeWidget()
         self.file_list.setHeaderLabel("Files imported")
 
-        self.import_button = QPushButton("Import data file")
+        self.import_button = QPushButton("Import .pd file")
         self.import_button.clicked.connect(self.on_import_samples_clicked)
 
         layout = QVBoxLayout()
