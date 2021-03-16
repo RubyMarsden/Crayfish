@@ -10,7 +10,7 @@ class Spot:
 	def __init__(self, spot_data):
 
 		self.name = spot_data[0][0]
-		parts = self.name.split("-",1)
+		parts = self.name.split("-", 1)
 		if len(parts) != 2:
 			raise Exception("None standard spot name in file '" + self.name + "'. Spot names must be of the form (SAMPLE)-(ID)")
 		self.sample_name, self.id = parts

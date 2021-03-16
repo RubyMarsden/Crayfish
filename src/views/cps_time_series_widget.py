@@ -1,15 +1,11 @@
-import sys
-
 import matplotlib
-from PyQt5.QtWidgets import QHBoxLayout, QPushButton, QWidget, QVBoxLayout, QLabel, QCheckBox, QGridLayout
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QHBoxLayout, QWidget, QVBoxLayout, QLabel
 
 from models.data_key import DataKey
 
 matplotlib.use('QT5Agg')
 import matplotlib.pyplot as plt
 
-from views.sample_tree import SampleTreeWidget
 from utils import ui_utils
 
 
@@ -84,7 +80,7 @@ class cpsTimeSeriesWidget(QWidget):
             line.mass_peak = massPeak
             self.lines.append(line)
         axis.legend(loc="upper left")
-        axis.set_xlabel("Spot number")
+        axis.set_xlabel("Block number")
         axis.set_ylabel("SBM normalised counts" if config.normalise_by_sbm else "Counts per second")
         plt.tight_layout()
         self.canvas.draw()

@@ -9,12 +9,12 @@ import math
 
 # contains the data for a single scan within a single mass peak within a spot
 class Row:
-    def __init__(self, spotName, mpName, scanNumber, massPeakValue, countData, sbmData):
+    def __init__(self, spotName, mpName, scanNumber, massAMUValue, countData, sbmData):
         self.name = spotName + " " + mpName + " " + str(scanNumber)
         self.mpName = mpName
         self.scan_number = str(scanNumber)
         # self.time = timeOfScan
-        self.massPeakValue = massPeakValue
+        self.massAMUValue = massAMUValue
 
         self.rawRows = {DataKey.COUNTS: countData, DataKey.SBM_COUNTS: sbmData}
 
@@ -69,8 +69,6 @@ class Row:
             self.linear_correction(config, background1, background2)
         elif config.background_method == BackgroundCorrection.CONST:
             self.constant_background_correction(config, background2)
-        elif config.background_method == BackgroundCorrection.NONE:
-            self.no_background_correction(config)
         else:
             raise Exception("No background correction selected")
 
@@ -90,9 +88,9 @@ class Row:
         cps_b1, uncertainty_b1 = background1.data[config][DataKey.OUTLIER_RES_MEAN_STDEV]
         cps_b2, uncertainty_b2 = background2.data[config][DataKey.OUTLIER_RES_MEAN_STDEV]
 
-        x1 = background1.massPeakValue
-        x2 = background2.massPeakValue
-        xThO246 = self.massPeakValue
+        x1 = background1.massAMUValue
+        x2 = background2.massAMUValue
+        xThO246 = self.massAMUValue
 
         isConstant = cps_b2 >= cps_b1
         if isConstant:
@@ -120,9 +118,9 @@ class Row:
         cps, uncertainty = self.data[config][DataKey.OUTLIER_RES_MEAN_STDEV]
         cps_b1, uncertainty_b1 = background1.data[config][DataKey.OUTLIER_RES_MEAN_STDEV]
         cps_b2, uncertainty_b2 = background2.data[config][DataKey.OUTLIER_RES_MEAN_STDEV]
-        x1 = background1.massPeakValue
-        x2 = background2.massPeakValue
-        xThO246 = self.massPeakValue
+        x1 = background1.massAMUValue
+        x2 = background2.massAMUValue
+        xThO246 = self.massAMUValue
 
         isConstant = cps_b2 >= cps_b1
         if isConstant:
@@ -140,5 +138,3 @@ class Row:
 
         self.data[config][DataKey.BKGRD_CORRECTED] = background_corrected_cps, background_corrected_uncertainty
 
-    def no_background_correction(self, config):
-        self.data[config][DataKey.BKGRD_CORRECTED] = self.data[config][DataKey.OUTLIER_RES_MEAN_STDEV]

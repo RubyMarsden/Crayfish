@@ -39,6 +39,7 @@ def calculate_outlier_resistant_mean_and_st_dev(data, number_of_outliers_allowed
 
     return np.mean(clean_data), np.std(clean_data)
 
+
 def relative_error(value, absolute_error):
     if value == 0:
         return 0
@@ -88,6 +89,7 @@ def activity_ratio(cps_mass_1, cps_mass_1_uncertainty,
     ])
     return ratio, ratio_uncertainty
 
+
 """
 # NOT YORK REGRESSION *sigh*
 def weightedRegression(xs, ys, xErrors, yErrors, fitIntercept):
@@ -98,29 +100,30 @@ def weightedRegression(xs, ys, xErrors, yErrors, fitIntercept):
     return model.intercept_, model.coef_    
 """
 
+
 def calculate_age_from_values(x, dx, y, dy, w, dw, standard_line, standard_line_uncertainty):
     m = (y - w) / (x - w)
-    standard_corrected_m = m/standard_line
+    standard_corrected_m = m / standard_line
     c = TH230_DECAY_CONSTANT
     dc = TH230_DECAY_CONSTANT_ERROR
-    s = 1/standard_line
-    ds = (standard_line_uncertainty/standard_line) * s
+    s = 1 / standard_line
+    ds = (standard_line_uncertainty / standard_line) * s
     if 1 - standard_corrected_m > 0:
         age = -math.log(1 - standard_corrected_m) / c
 
         # partial differentials of the age
-        delta_a_delta_c = math.log(1 + s * (y - w)/(w - x)) / c**2
+        delta_a_delta_c = math.log(1 + s * (y - w) / (w - x)) / c ** 2
         delta_a_delta_y = s / (c * ((s - 1) * w - s * y + x))
         delta_a_delta_x = (y - w) * s / (c * ((s - 1) * w - s * y + x))
         delta_a_delta_w = (x - y) * s / ((w - x) * c * ((s - 1) * w - s * y + x))
         delta_a_delta_s = (y - w) / (c * ((s - 1) * w - s * y + x))
 
         uncertainty = math.sqrt(
-            (delta_a_delta_c**2 * dc**2) +
+            (delta_a_delta_c ** 2 * dc ** 2) +
             (delta_a_delta_w ** 2 * dw ** 2) +
             (delta_a_delta_y ** 2 * dy ** 2) +
             (delta_a_delta_x ** 2 * dx ** 2) +
-            (delta_a_delta_s**2 * ds**2)
+            (delta_a_delta_s ** 2 * ds ** 2)
         )
 
         return age, uncertainty
@@ -129,21 +132,18 @@ def calculate_age_from_values(x, dx, y, dy, w, dw, standard_line, standard_line_
 
 
 def calculate_error_weighted_mean_and_st_dev(values, errors):
-    errors_not_zero = []
-    for error in errors:
-        if error != 0:
-            errors_not_zero.append(error)
-    # TODO fix this
-    for i, error in enumerate(errors):
-        if error != 0:
-            continue
+    non_zero_errors = [error for error in errors if error != 0]
 
-        if len(errors_not_zero) != 0:
-            errors[i] = np.mean(errors_not_zero) / 10
-        else:
-            weighted_mean = np.mean(values)
-            weighted_st_dev = 0
-            return weighted_mean, weighted_st_dev
+    # If all errors are zero then simply take the mean.
+    if len(non_zero_errors) == 0:
+        weighted_mean = np.mean(values)
+        weighted_st_dev = 0
+        return weighted_mean, weighted_st_dev
+
+    # If some errors are zero, replace them with a small value
+    if len(non_zero_errors) < len(errors):
+        small_value = min(non_zero_errors) / 10
+        errors = [(error if error != 0 else small_value) for error in errors]
 
     inverse_errors = [1 / (error ** 2) for error in errors]
     sigma = sum(inverse_errors)

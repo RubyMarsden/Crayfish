@@ -2,6 +2,7 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import QDialog, QTabWidget, QVBoxLayout, QPushButton, QHBoxLayout, QCheckBox, QWidget, QGridLayout
 
 from models.configuration import Configuration
+from views.background_model_widget import BackgroundModelWidget
 from views.configuration_widget import ConfigurationWidget
 from views.sample_tree import SampleTreeWidget
 from views.sbm_time_series_widget import SBMTimeSeriesWidget
@@ -59,8 +60,9 @@ class ResultsDialog(QDialog):
         self.tabs.addTab(SBMTimeSeriesWidget(self), "1. SBM time series")
         self.tabs.addTab(cpsTimeSeriesWidget(self), "2. Counts per second")
         self.tabs.addTab(ScanOutlierResistantCountsWidget(self), "3. Outlier resistant scan means")
-        self.tabs.addTab(StandardLineWidget(self), "4. Standard line")
-        self.tabs.addTab(AgeResultsWidget(self), "5. Ages")
+        self.tabs.addTab(BackgroundModelWidget(self), "4. Background model")
+        self.tabs.addTab(StandardLineWidget(self), "5. Standard line")
+        self.tabs.addTab(AgeResultsWidget(self), "6. Ages")
 
         self.mass_checkboxes = self.make_mass_check_boxes(samples)
 

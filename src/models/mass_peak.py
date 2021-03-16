@@ -5,13 +5,13 @@ import math
 
 # contains the data for a single mass peak within a spot
 class MassPeak:
-    def __init__(self, spotName, mpName, massPeakValues, countRowData, sbmRowData, countTime, numberOfScans):
+    def __init__(self, spotName, mpName, massAMUValues, countRowData, sbmRowData, countTime, numberOfScans):
         self.name = spotName + " " + mpName
         self.mpName = mpName
         self.rows = []
         self.count_time = countTime
         for i in range(numberOfScans):
-            row = Row(spotName, mpName, i, massPeakValues[i], countRowData[i], sbmRowData[i])
+            row = Row(spotName, mpName, i, massAMUValues[i], countRowData[i], sbmRowData[i])
             self.rows.append(row)
 
     def __repr__(self):
