@@ -22,6 +22,7 @@ class ConfigurationWidget(QWidget):
         
         self.exclude_spot_checkbox = QCheckBox("Exclude spot")
         self.exclude_spot_checkbox.stateChanged.connect(self.on_state_changed)
+        self.exclude_spot_checkbox.stateChanged.connect(self.on_spot_exclusion)
 
         self.sbm_check_box = QCheckBox("Normalise to sbm")
         self.sbm_check_box.stateChanged.connect(self.on_state_changed)
@@ -98,8 +99,10 @@ class ConfigurationWidget(QWidget):
 
     def on_selected_sample_change(self, current_tree_item, previous_tree_item):
         self.blockSignals(True)
+        self.exclude_spot_checkbox.blockSignals(True)
         self.update_exclude_spot_checkbox()
         self.blockSignals(False)
+        self.exclude_spot_checkbox.blockSignals(False)
 
     def on_state_changed(self):
         sbm_normalised = self.sbm_check_box.isChecked()
@@ -112,5 +115,7 @@ class ConfigurationWidget(QWidget):
         )
         self.state_changed.emit()
         
-        
+    def on_spot_exclusion(self):
+        is_flagged = self.exclude_spot_checkbox.isChecked()
+        self.sample_tree.highlight_spot(is_flagged)
 

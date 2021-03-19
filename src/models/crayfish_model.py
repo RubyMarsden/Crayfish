@@ -1,11 +1,8 @@
-import copy
-
 from PyQt5.QtCore import pyqtSignal, QObject
 
 from models.background_method import BackgroundCorrection
 from models.configuration import Configuration
 from models.data_key import DataKey
-from models.mathbot import calculate_error_weighted_mean_and_st_dev
 from models.sample import Sample
 from models.settings import NONBACKGROUND
 from models.spot import Spot, BACKGROUND1, BACKGROUND2

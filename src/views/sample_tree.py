@@ -1,3 +1,4 @@
+from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QWidget, QPushButton, QHBoxLayout, QVBoxLayout
 
 
@@ -89,3 +90,11 @@ class SampleTreeWidget(QWidget):
 
         previous_item = self.tree.itemAbove(current_tree_item)
         self.back_item_button.setDisabled(previous_item is None)
+
+    def highlight_spot(self, is_flagged):
+        current_tree_item = self.tree.currentItem()
+        if current_tree_item.is_sample:
+            return
+
+        colour = QColor(255, 0, 0, 50) if is_flagged else QColor(0, 0, 0, 0)
+        current_tree_item.setBackground(0, colour)
