@@ -29,9 +29,9 @@ class MassPeak:
         for row in self.rows:
             row.normalise_all_counts_to_cps(config, self.count_time)
 
-    def calculate_outlier_resistant_mean_st_dev_for_rows(self, config, overall_stats):
+    def calculate_outlier_resistant_mean_st_dev_for_rows(self, config):
         for row in self.rows:
-            row.calculate_mean_and_st_dev_blocks(config, overall_stats)
+            row.calculate_mean_and_st_dev_blocks(config)
 
     def background_correction_230Th(self, config, background1, background2):
         for row, row_b1, row_b2 in zip(self.rows, background1.rows, background2.rows):

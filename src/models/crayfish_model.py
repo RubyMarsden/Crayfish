@@ -107,7 +107,6 @@ class CrayfishModel():
 
         default_config = Configuration(
             normalise_by_sbm=True,
-            apply_primary_background_filter=True,
             background_method=BackgroundCorrection.EXP,
             excluded_spots=frozenset()
         )
