@@ -28,11 +28,7 @@ class CrayfishModel():
     ## Importing ##
     ###############
 
-    def import_samples(self, file_name, replace):
-        if replace:
-            self.samples_by_name = {}
-            self.imported_files = []
-
+    def import_samples(self, file_name):
         if file_name in self.imported_files:
             raise Exception("This file has already been imported")
 
@@ -41,6 +37,22 @@ class CrayfishModel():
         self._add_samples_from_spots(spots)
         self.imported_files.append(file_name)
 
+        self.emit_samples_changed_signal()
+
+    def delete_samples(self, file_name):
+        self.imported_files.remove(file_name)
+
+        samples_to_keep = {}
+        for sample in self.samples_by_name.values():
+            spots_to_keep = [spot for spot in sample.spots if spot.file_name != file_name]
+            if len(spots_to_keep) != 0:
+                samples_to_keep[sample.name] = sample
+                sample.spots = spots_to_keep
+        self.samples_by_name = samples_to_keep
+
+        self.emit_samples_changed_signal()
+
+    def emit_samples_changed_signal(self):
         samples = list(self.samples_by_name.values())
         self.signals.sample_list_updated.emit(samples, self.imported_files)
 
@@ -67,7 +79,7 @@ class CrayfishModel():
             while current_line_number < len(pd_data) and pd_data[current_line_number] != ["***"]:
                 spot_data.append(pd_data[current_line_number])
                 current_line_number = current_line_number + 1
-            spot = Spot(spot_data)
+            spot = Spot(spot_data, filename)
             spots.append(spot)
             spot_data = []
             current_line_number += 1
@@ -82,6 +94,7 @@ class CrayfishModel():
     ################
     ## Processing ##
     ################
+
     def process_samples(self):
         self.clear_previous_calculations()
 

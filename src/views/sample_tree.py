@@ -15,6 +15,7 @@ class SampleTreeWidget(QWidget):
         layout = QVBoxLayout()
         layout.addWidget(self.tree)
         layout.addWidget(self.buttons)
+        layout.setContentsMargins(0, 0, 0, 0)
 
         self.setLayout(layout)
 
@@ -28,12 +29,15 @@ class SampleTreeWidget(QWidget):
                 spot_tree_item = QTreeWidgetItem(sample_tree_item, [spot.id])
                 spot_tree_item.spot = spot
                 spot_tree_item.is_sample = False
-        self.next_item_button.setDisabled(False)
-        self.back_item_button.setDisabled(False)
+        any_samples = len(samples) > 0
+        self.next_item_button.setEnabled(any_samples)
+        self.back_item_button.setEnabled(any_samples)
         self.select_first_spot()
 
     def select_first_spot(self):
         first_sample = self.tree.topLevelItem(0)
+        if not first_sample:
+            return
         first_spot = first_sample.child(0)
         self.tree.setCurrentItem(first_spot)
 

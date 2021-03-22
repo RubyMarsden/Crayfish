@@ -27,14 +27,22 @@ class SamplesOverview(QWidget):
 
         self.file_list = QTreeWidget()
         self.file_list.setHeaderLabel("Files imported")
+        self.file_list.currentItemChanged.connect(self.on_selected_file_change)
 
         self.import_button = QPushButton("Import .pd file")
-        self.import_button.clicked.connect(self.on_import_samples_clicked)
+        self.import_button.clicked.connect(self.on_import_button_clicked)
+        self.delete_button = QPushButton("Remove .pd file")
+        self.delete_button.setEnabled(False)
+        self.delete_button.clicked.connect(self.on_delete_button_clicked)
+
+        button_layout = QHBoxLayout()
+        button_layout.addWidget(self.import_button)
+        button_layout.addWidget(self.delete_button)
 
         layout = QVBoxLayout()
         layout.addWidget(self.file_list,1)
         layout.addWidget(self.sample_tree, 3)
-        layout.addWidget(self.import_button)
+        layout.addLayout(button_layout)
 
         lhs_widget = QWidget()
         lhs_widget.setLayout(layout)
@@ -47,7 +55,7 @@ class SamplesOverview(QWidget):
         self.sample_box.setVisible(False)
 
         self.process_button = QPushButton("Process data")
-        self.process_button.setVisible(False)
+        self.process_button.setEnabled(False)
         self.process_button.clicked.connect(self.on_process_button_clicked)
 
         layout = QVBoxLayout()
@@ -63,23 +71,29 @@ class SamplesOverview(QWidget):
     ## Actions ##
     #############
 
-    def on_import_samples_clicked(self):
+    def on_import_button_clicked(self):
         # popup to be made for now outputs are filename,
         file_name, _ = QFileDialog.getOpenFileName(self, "Select data file", "", "All Files (*);;CSV Files (*.csv)")
         if not file_name:
             return
-        replace = False
         # model needs to do the importing
-        self.model.import_samples(file_name, replace)
+        self.model.import_samples(file_name)
+
+    def on_delete_button_clicked(self):
+        current_item = self.file_list.currentItem()
+        self.model.delete_samples(current_item.file_name)
 
     def on_sample_list_updated(self, samples, files):
         self.file_list.clear()
         for file in files:
-            QTreeWidgetItem(self.file_list, [file])
+            item = QTreeWidgetItem(self.file_list, [file])
+            item.file_name = file
+            item.setToolTip(0, file)
 
         self.sample_tree.set_samples(samples)
 
-        self.process_button.setVisible(True)
+        any_samples = len(samples) > 0
+        self.process_button.setEnabled(any_samples)
 
     def on_selected_sample_change(self, current_tree_item, previous_tree_item):
         if current_tree_item is None:
@@ -93,6 +107,9 @@ class SamplesOverview(QWidget):
             self.sample_box.display_sample(current_tree_item.sample)
         else:
             self.spot_box.display_spot(current_tree_item.spot)
+
+    def on_selected_file_change(self, current_item, previous_item):
+        self.delete_button.setEnabled(current_item is not None)
 
     def on_process_button_clicked(self):
         self.model.process_samples()

@@ -5,9 +5,11 @@ from models.mass_peak import MassPeak
 from models.data_key import DataKey
 from models.settings import *
 
+
 class Spot:
 
-	def __init__(self, spot_data):
+	def __init__(self, spot_data, file_name):
+		self.file_name = file_name
 
 		self.name = spot_data[0][0]
 		parts = self.name.split("-", 1)
