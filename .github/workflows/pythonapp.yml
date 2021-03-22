@@ -43,11 +43,6 @@ jobs:
       matrix:
         os: [windows-latest, ubuntu-latest] # ${{ matrix.OS_NAME }}
         include:
-          - os: macos-latest
-            OS_NAME: macOS
-            PYTHON_VERSION: 3.6.12
-            EXTENSION:
-            RESOURCES: resources:resources
 
           - os: ubuntu-latest
             OS_NAME: ubuntu
@@ -92,18 +87,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pyinstaller==3.6
-      # - name: Lint with flake8
-      #  run: |
-      #    pip install flake8
-      #    # stop the build if there are Python syntax errors or undefined names
-      #    flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-      #    # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-      #    flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
       - name: Build with pyinstaller
         shell: bash
         run: |
-          pyinstaller --onefile --hidden-import='pkg_resources.py2_warn' --add-data '${{ matrix.RESOURCES }}' --icon=./resources/icon.ico src/UPb_Unmixer.py
+          pyinstaller --onefile --hidden-import='pkg_resources.py2_warn' --add-data '${{ matrix.RESOURCES }}' --icon=./resources/icon.ico src/Crayfish.py
       - name: Upload release asset
         id: upload-release-asset
         uses: actions/upload-release-asset@v1.0.1
