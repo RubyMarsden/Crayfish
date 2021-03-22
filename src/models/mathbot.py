@@ -1,14 +1,9 @@
-import numpy as np
-# from scipy.stats import poisson
-# from astropy.stats import biweight_location, biweight_scale
-import statsmodels.stats.stattools as stattools
-# import robustats
-from sklearn.linear_model import LinearRegression
 import math
 
-from models import crayfish_model
+import numpy as np
+import statsmodels.stats.stattools as stattools
+
 from models.settings import TH230_DECAY_CONSTANT, TH230_DECAY_CONSTANT_ERROR
-from models.data_key import DataKey
 
 
 def calculate_outlier_resistant_mean_and_st_dev(data, number_of_outliers_allowed):
