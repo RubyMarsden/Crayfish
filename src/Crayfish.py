@@ -23,6 +23,6 @@ if __name__ == "__main__":
     model.set_view(window)
 
     set_except_hook(window)
-    model.import_samples("C:/Users/19402828/Documents/Python Scripts/Crayfish\data/k7.pd")
+    # model.import_samples("C:/Users/19402828/Documents/Python Scripts/Crayfish\data/k7.pd")
     window.show()
     sys.exit(app.exec_())

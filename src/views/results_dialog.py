@@ -2,7 +2,6 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import QDialog, QTabWidget, QVBoxLayout, QPushButton, QHBoxLayout, QCheckBox, QWidget, QGridLayout
 
 from models.configuration import Configuration
-from views.background_model_widget import BackgroundModelWidget
 from views.configuration_widget import ConfigurationWidget
 from views.sample_tree import SampleTreeWidget
 from views.sbm_time_series_widget import SBMTimeSeriesWidget
