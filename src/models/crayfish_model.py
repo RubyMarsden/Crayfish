@@ -110,7 +110,7 @@ class CrayfishModel():
         if age_standard_info is None:
             return
 
-        self.manual_whole_rock_values(samples)
+        # self.manual_whole_rock_values(samples)
         self.view.ask_user_for_WR_activity_ratios(samples)
 
         self.standardise_all_sbm_and_calculate_time_series(samples)

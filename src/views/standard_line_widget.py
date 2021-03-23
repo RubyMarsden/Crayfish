@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QHBoxLayout, QPushButton, QWidget, QVBoxLayout, QLab
 from PyQt5.QtCore import Qt
 
 from models.data_key import DataKey
+import numpy as np
 
 matplotlib.use('QT5Agg')
 import matplotlib.pyplot as plt
@@ -82,7 +83,10 @@ class StandardLineWidget(QWidget):
         axis.errorbar(xs, ys, xerr=x_errors, yerr=y_errors, linestyle='none', marker='o')
         standard_line, standard_line_uncertainty = self.model_data[config][DataKey.STANDARD_LINE_GRADIENT]
         standard_line_MSWD = self.model_data[config][DataKey.STANDARD_LINE_MSWD]
-        string = f"Standard line gradient: {standard_line} Uncertainty: {standard_line_uncertainty} MSWD: {standard_line_MSWD}"
+        standard_x = np.arange(0.0, (max(xs)+max(x_errors)), max(xs)/4)
+        standard_y = standard_line*standard_x
+        axis.plot(standard_x, standard_y)
+        string = f"Standard line gradient: {standard_line:.3f} Uncertainty: {standard_line_uncertainty:.3f} MSWD: {standard_line_MSWD:.3f} "
         axis.text(0.5, 1, string, transform=axis.transAxes, horizontalalignment="center")
         axis.set_xlabel("(238U)/(232Th)")
         axis.set_ylabel("(230Th)/(232Th)")

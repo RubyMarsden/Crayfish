@@ -59,7 +59,6 @@ class ResultsDialog(QDialog):
         self.tabs.addTab(SBMTimeSeriesWidget(self), "1. SBM time series")
         self.tabs.addTab(cpsTimeSeriesWidget(self), "2. Counts per second")
         self.tabs.addTab(ScanOutlierResistantCountsWidget(self), "3. Outlier resistant scan means")
-        self.tabs.addTab(BackgroundModelWidget(self), "4. Background model")
         self.tabs.addTab(StandardLineWidget(self), "5. Standard line")
         self.tabs.addTab(AgeResultsWidget(self), "6. Ages")
 
