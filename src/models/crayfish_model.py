@@ -106,9 +106,9 @@ class CrayfishModel():
             if sample in equilibrium_standards:
                 sample.is_standard = True
 
-        age_standard_info = self.view.ask_user_for_age_standard(samples, equilibrium_standards)
-        if age_standard_info is None:
-            return
+        # age_standard_info = self.view.ask_user_for_age_standard(samples, equilibrium_standards)
+        # if age_standard_info is None:
+            # return
 
         # self.manual_whole_rock_values(samples)
         self.view.ask_user_for_WR_activity_ratios(samples)
